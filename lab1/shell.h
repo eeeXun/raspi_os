@@ -1,13 +1,5 @@
 #define CLI_MAX_LEN 50
 
-#define CMD_LEN 32
-#define MSG_LEN 64
-typedef struct CMDS {
-    char cmd[CMD_LEN];
-    char message[MSG_LEN];
-    void (*exec_func)();
-} CMDS;
-
 void cmd_hello();
 void cmd_help();
 void cmd_info_firmware_revision();

@@ -5,6 +5,14 @@
 #include "uart.h"
 #include "utils.h"
 
+#define CMD_LEN 32
+#define MSG_LEN 64
+typedef struct CMDS {
+    char cmd[CMD_LEN];
+    char message[MSG_LEN];
+    void (*exec_func)();
+} CMDS;
+
 struct CMDS cmd_list[] = {
     { .cmd = "help", .message = "print this help menu", .exec_func = cmd_help },
     { .cmd = "hello", .message = "print Hello World!", .exec_func = cmd_hello },
@@ -67,7 +75,7 @@ void cmd_help()
 
 void cmd_info_firmware_revision()
 {
-    if (!get_firmware_revision()) {
+    if (!mbox_get_info(MBOX_TAG_FIRMWARE_REVISION)) {
         uart_puts("Get Firmware Revision Failed!\n");
         return;
     }
@@ -79,7 +87,7 @@ void cmd_info_firmware_revision()
 
 void cmd_info_board_model()
 {
-    if (!get_board_model()) {
+    if (!mbox_get_info(MBOX_TAG_BOARD_MODEL)) {
         uart_puts("Get Board Model Failed!\n");
         return;
     }
@@ -91,7 +99,7 @@ void cmd_info_board_model()
 
 void cmd_info_board_revision()
 {
-    if (!get_board_revision()) {
+    if (!mbox_get_info(MBOX_TAG_BOARD_REVISION)) {
         uart_puts("Get Board Revision Failed!\n");
         return;
     }
@@ -103,7 +111,7 @@ void cmd_info_board_revision()
 
 void cmd_info_mac()
 {
-    if (!get_board_mac()) {
+    if (!mbox_get_info(MBOX_TAG_BOARD_MAC)) {
         uart_puts("Get Mac Address Failed!\n");
         return;
     }
@@ -119,7 +127,7 @@ void cmd_info_mac()
 
 void cmd_info_board_serial()
 {
-    if (!get_board_serial()) {
+    if (!mbox_get_info(MBOX_TAG_BOARD_SERIAL)) {
         uart_puts("Get Board serial Failed\n");
         return;
     }
@@ -132,7 +140,7 @@ void cmd_info_board_serial()
 
 void cmd_info_memory()
 {
-    if (!get_arm_memory()) {
+    if (!mbox_get_info(MBOX_TAG_ARM_MEMORY)) {
         uart_puts("Get Meomry Failed\n");
         return;
     }
