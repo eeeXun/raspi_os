@@ -7,7 +7,6 @@ OBJCOPY = aarch64-linux-gnu-objcopy
 CFILES = $(wildcard *.c)
 OFILES = $(CFILES:.c=.o)
 
-# CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
 
 boot.o: boot.s
