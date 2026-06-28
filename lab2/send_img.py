@@ -33,8 +33,8 @@ def main():
     parser.add_argument(
         "-f",
         "--file",
-        default="kernel8.img",
-        help="The img to send (default: kernel8.img)",
+        default="kernel/kernel8.img",
+        help="The img to send (default: kernel/kernel8.img)",
     )
     parser.add_argument(
         "-s",
