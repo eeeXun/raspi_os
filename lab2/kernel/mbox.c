@@ -23,12 +23,12 @@ enum {
     MBOX_WRITE = (VIDEOCORE_MBOX + 0x20),
 };
 
-typedef struct MBOX_REQUEST {
+typedef struct {
     MBOX_REQUEST_TAG tag;
     int size;
 } MBOX_REQUEST;
 
-struct MBOX_REQUEST mbox_requests[] = {
+MBOX_REQUEST mbox_requests[] = {
     { .tag = MBOX_TAG_FIRMWARE_REVISION, .size = 4 },
     { .tag = MBOX_TAG_BOARD_MODEL, .size = 4 },
     { .tag = MBOX_TAG_BOARD_REVISION, .size = 4 },

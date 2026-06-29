@@ -7,13 +7,13 @@
 
 #define CMD_LEN 32
 #define MSG_LEN 64
-typedef struct CMDS {
+typedef struct {
     char cmd[CMD_LEN];
     char message[MSG_LEN];
     void (*exec_func)();
 } CMDS;
 
-struct CMDS cmd_list[] = {
+CMDS cmd_list[] = {
     { .cmd = "help", .message = "print this help menu", .exec_func = cmd_help },
     { .cmd = "hello", .message = "print Hello World!", .exec_func = cmd_hello },
     { .cmd = "reboot",

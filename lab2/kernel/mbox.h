@@ -2,7 +2,7 @@ extern volatile unsigned int mbox[8];
 
 // Reference
 // https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
-typedef enum MBOX_REQUEST_TAG {
+typedef enum {
     MBOX_TAG_FIRMWARE_REVISION = 0x00000001,
     MBOX_TAG_BOARD_MODEL = 0x00010001,
     MBOX_TAG_BOARD_REVISION = 0x00010002,
