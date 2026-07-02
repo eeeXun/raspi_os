@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "cpio.h"
 #include "mbox.h"
 #include "reboot.h"
 #include "string.h"
@@ -16,6 +17,12 @@ typedef struct {
 CMDS cmd_list[] = {
     { .cmd = "help", .message = "print this help menu", .exec_func = cmd_help },
     { .cmd = "hello", .message = "print Hello World!", .exec_func = cmd_hello },
+    { .cmd = "ls",
+        .message = "list files in the initramfs",
+        .exec_func = cmd_ls },
+    { .cmd = "cat",
+        .message = "print a file from the initramfs",
+        .exec_func = cmd_cat },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -51,7 +58,41 @@ void cmd_not_found(char* buf)
 
 void cmd_hello() { uart_puts("Hello World!\n"); }
 
-void format_output(char* s)
+void cmd_ls()
+{
+    cpio_newc_header* header = (cpio_newc_header*)CPIO_BASE;
+    unsigned int filesize;
+    char *name, *data;
+    while ((header = cpio_next(header, &filesize, &name, &data)) != 0) {
+        if (strcmp(name, ".") == 0)
+            continue;
+        uart_puts(name);
+        uart_put('\n');
+    }
+}
+
+void cmd_cat()
+{
+    cpio_newc_header* header = (cpio_newc_header*)CPIO_BASE;
+    unsigned int filesize;
+    char *name, *data;
+    char input_name[CLI_MAX_LEN] = {};
+    uart_puts("Filename: ");
+    cmd_read(input_name);
+    while ((header = cpio_next(header, &filesize, &name, &data)) != 0) {
+        if (strcmp(input_name, name) == 0) {
+            for (unsigned int i = 0; i < filesize; i++)
+                uart_put(data[i]);
+            uart_put('\n');
+            return;
+        }
+    }
+    uart_puts("cat: ");
+    uart_puts(input_name);
+    uart_puts(": No such file\n");
+}
+
+void format_info_output(char* s)
 {
     int cmd_len = strlen(s);
     uart_puts(s);
@@ -67,7 +108,7 @@ void format_output(char* s)
 void cmd_help()
 {
     for (int i = 0; i < LEN(cmd_list); i++) {
-        format_output(cmd_list[i].cmd);
+        format_info_output(cmd_list[i].cmd);
         uart_puts(cmd_list[i].message);
         uart_puts("\n");
     }
@@ -79,7 +120,7 @@ void cmd_info_firmware_revision()
         uart_puts("Get Firmware Revision Failed!\n");
         return;
     }
-    format_output("Firmware Revision");
+    format_info_output("Firmware Revision");
     uart_puts("0x");
     uart_put_hex(mbox[5]);
     uart_put('\n');
@@ -91,7 +132,7 @@ void cmd_info_board_model()
         uart_puts("Get Board Model Failed!\n");
         return;
     }
-    format_output("Board Model");
+    format_info_output("Board Model");
     uart_puts("0x");
     uart_put_hex(mbox[5]);
     uart_put('\n');
@@ -103,7 +144,7 @@ void cmd_info_board_revision()
         uart_puts("Get Board Revision Failed!\n");
         return;
     }
-    format_output("Board Revision");
+    format_info_output("Board Revision");
     uart_puts("0x");
     uart_put_hex(mbox[5]);
     uart_put('\n');
@@ -115,7 +156,7 @@ void cmd_info_mac()
         uart_puts("Get Mac Address Failed!\n");
         return;
     }
-    format_output("Mac Address");
+    format_info_output("Mac Address");
     unsigned char* mac = (unsigned char*)&mbox[5];
     uart_put_hex(mac[0]);
     for (int i = 1; i < 6; i++) {
@@ -131,7 +172,7 @@ void cmd_info_board_serial()
         uart_puts("Get Board serial Failed\n");
         return;
     }
-    format_output("Board Serial");
+    format_info_output("Board Serial");
     uart_puts("0x");
     // little endian
     uart_put_hex(((unsigned long long)mbox[6] << 32) | mbox[5]);
@@ -144,11 +185,11 @@ void cmd_info_memory()
         uart_puts("Get Meomry Failed\n");
         return;
     }
-    format_output("Memory Base Address");
+    format_info_output("Memory Base Address");
     uart_puts("0x");
     uart_put_hex(mbox[5]);
     uart_put('\n');
-    format_output("Memory Size");
+    format_info_output("Memory Size");
     uart_puts("0x");
     uart_put_hex(mbox[6]);
     uart_put('\n');

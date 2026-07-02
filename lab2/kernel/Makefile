@@ -7,7 +7,7 @@ OBJCOPY = aarch64-linux-gnu-objcopy
 CFILES = $(wildcard *.c)
 OFILES = $(CFILES:.c=.o)
 
-CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
+CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
 
 boot.o: boot.s
 	${CC} $(CFLAGS) -c boot.s -o boot.o
@@ -22,7 +22,7 @@ kernel8.img: kernel8.elf
 	${OBJCOPY} -O binary kernel8.elf kernel8.img
 
 run: kernel8.img
-	qemu-system-aarch64 -M raspi4b -kernel kernel8.img -serial null -serial stdio -display none
+	qemu-system-aarch64 -M raspi4b -kernel kernel8.img -initrd initramfs.cpio -serial null -serial stdio -display none
 
 clean:
 	rm *.o *.elf *.img
