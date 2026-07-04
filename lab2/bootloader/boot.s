@@ -1,7 +1,7 @@
 .section ".text.boot"
 
 _start:
-	// Set mpidr_el1, which could be the ID of processor, to x0
+	// Set mpidr_el1, which could be the ID of processor, to x1
 	mrs x1, mpidr_el1
 	and x1, x1, #0x3
 	cbz x1, init
