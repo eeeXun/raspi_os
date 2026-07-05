@@ -1,5 +1,3 @@
-#define CPIO_BASE 0x8000000
-
 typedef struct {
     char c_magic[6];
     char c_ino[8];

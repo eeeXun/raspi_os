@@ -6,6 +6,8 @@
 #include "uart.h"
 #include "utils.h"
 
+char* cpio_base;
+
 #define CMD_LEN 32
 #define MSG_LEN 64
 typedef struct {
@@ -60,7 +62,7 @@ void cmd_hello() { uart_puts("Hello World!\n"); }
 
 void cmd_ls()
 {
-    cpio_newc_header* header = (cpio_newc_header*)CPIO_BASE;
+    cpio_newc_header* header = (cpio_newc_header*)cpio_base;
     unsigned int filesize;
     char *name, *data;
     while ((header = cpio_next(header, &filesize, &name, &data)) != 0) {
@@ -73,7 +75,7 @@ void cmd_ls()
 
 void cmd_cat()
 {
-    cpio_newc_header* header = (cpio_newc_header*)CPIO_BASE;
+    cpio_newc_header* header = (cpio_newc_header*)cpio_base;
     unsigned int filesize;
     char *name, *data;
     char input_name[CLI_MAX_LEN] = {};

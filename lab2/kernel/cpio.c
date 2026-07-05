@@ -1,11 +1,10 @@
 #include "cpio.h"
 #include "string.h"
 #include "uart.h"
+#include "utils.h"
 
 #define CPIO_MAGIC "070701"
 #define CPIO_TRAILER "TRAILER!!!"
-
-unsigned int align4(unsigned int num) { return (num + 0b11) & ~(0b11); }
 
 unsigned int hex2int(char* str)
 {
