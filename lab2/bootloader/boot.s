@@ -22,13 +22,19 @@ relocate:
 	// We set location counter to 0x60000 in linker script
 	// The cmd_list[i].exec_func() should located .data from 0x60000
 	// But qemu always load into 0x80000
-	// So the .data is not located from 0x60000
+	// So the .data is not located at 0x60000
 	// And it can't find the cmd_list[i].exec_func()
 	ldr  x4, [x1], #8
 	str  x4, [x2], #8
 	sub  x3, x3, #8
 	cbnz x3, relocate
 
+	// Continue executing in the relocated copy (at the 0x60000 link address).
+	// Without this jump, b main, runs at 0x80000 + offset in qemu
+	ldr x1, =reloc_done
+	br  x1
+
+reloc_done:
 	// Set stack pointer to start, then it will push forward from start
 	ldr x1, =_start
 	mov sp, x1
