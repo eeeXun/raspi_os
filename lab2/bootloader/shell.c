@@ -4,12 +4,11 @@
 #include "uart.h"
 #include "utils.h"
 
-extern char* _kernel_start;
+char* _dtb_base;
+extern char* _kernel_start; // define in linker script
 
 #define CMD_LEN 32
 #define MSG_LEN 64
-#define BOOT_CHUNK                                                             \
-    120 // bytes received per ACK; must match CHUNK in send_img.py
 typedef struct CMDS {
     char cmd[CMD_LEN];
     char message[MSG_LEN];
@@ -74,7 +73,7 @@ void cmd_boot()
     uart_puts("Load img successfully\n");
     uart_puts("Start booting\n");
 
-    ((void (*)())kernel_entry)();
+    ((void (*)(char*))kernel_entry)(_dtb_base);
 }
 
 void cmd_reboot()

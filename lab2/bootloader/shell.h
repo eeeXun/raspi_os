@@ -1,5 +1,7 @@
 #define CLI_MAX_LEN 50
 
+extern char* _dtb_base; // define in main.c
+
 void cmd_hello();
 void cmd_help();
 void cmd_boot();

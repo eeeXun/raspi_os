@@ -22,7 +22,8 @@ bootloader.img: bootloader.elf
 	${OBJCOPY} -O binary bootloader.elf bootloader.img
 
 run: bootloader.img
-	qemu-system-aarch64 -M raspi4b -kernel bootloader.img -serial null -serial pty -display none
+	qemu-system-aarch64 -M raspi4b -kernel bootloader.img -initrd ../initramfs.cpio \
+		-dtb ../../firmware/bcm2711-rpi-4-b.dtb -serial null -serial pty -display none
 
 clean:
 	rm *.o *.elf *.img
