@@ -39,3 +39,4 @@ core_freq_min=500
 - [Instructions Set](https://developer.arm.com/documentation/ddi0602/2026-03/Base-Instructions?lang=en)
 - [Mailbox](https://github.com/raspberrypi/firmware/wiki/Mailboxes)
 - [Mailbox property](https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface)
+- [Devicetree Blob format](https://devicetree-specification.readthedocs.io/en/stable/flattened-format.html)
