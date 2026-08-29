@@ -4,11 +4,28 @@ _start:
 	// Set mpidr_el1, which could be the ID of processor, to x1
 	mrs x1, mpidr_el1
 	and x1, x1, #0x3
-	cbz x1, init
+	cbz x1, from_el2_to_el1
 
 lazy_loop:
 	wfe
 	b lazy_loop
+
+from_el2_to_el1:
+	// hcr_el2.RW = 1, so EL1 runs in AArch64 instead of AArch32
+	mov x1, #(1 << 31)
+	msr hcr_el2, x1
+
+	// 0x3C5
+	// [9:6], DAIF = 0b1111, all masked
+	// M[3:0] = 0b0101 = EL1h (EL1 with sp_el1, sp becomes sp_el1)
+	mov x1, #0x3C5
+	msr spsr_el2, x1 // Saved Program Status Register, holds the saved process state
+
+	// Where eret lands
+	ldr x1, =init
+	msr elr_el2, x1 // Exception Link Register, holds the address to return to
+
+	eret
 
 init:
 	// Set stack pointer to start, then it will push forward from start
