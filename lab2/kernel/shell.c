@@ -75,23 +75,20 @@ void cmd_ls()
 
 void cmd_cat()
 {
-    cpio_newc_header* header = (cpio_newc_header*)cpio_base;
     unsigned int filesize;
-    char *name, *data;
+    char *data;
     char input_name[CLI_MAX_LEN] = {};
     uart_puts("Filename: ");
     cmd_read(input_name);
-    while ((header = cpio_next(header, &filesize, &name, &data)) != 0) {
-        if (strcmp(input_name, name) == 0) {
-            for (unsigned int i = 0; i < filesize; i++)
-                uart_put(data[i]);
-            uart_put('\n');
-            return;
-        }
+    if (!cpio_find(&filesize, input_name, &data)) {
+        uart_puts("cat: ");
+        uart_puts(input_name);
+        uart_puts(": No such file\n");
+        return;
     }
-    uart_puts("cat: ");
-    uart_puts(input_name);
-    uart_puts(": No such file\n");
+    for (unsigned int i = 0; i < filesize; i++)
+        uart_put(data[i]);
+    uart_put('\n');
 }
 
 void format_info_output(char* s)

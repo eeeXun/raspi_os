@@ -36,3 +36,14 @@ cpio_newc_header* cpio_next(
     *data = (char*)header + align4(sizeof(cpio_newc_header) + namesize);
     return (cpio_newc_header*)(*data + align4(*filesize));
 }
+
+int cpio_find(unsigned int* filesize, char* name, char** data)
+{
+    cpio_newc_header* header = (cpio_newc_header*)cpio_base;
+    char* entry_name;
+    while ((header = cpio_next(header, filesize, &entry_name, data)) != 0) {
+        if (strcmp(name, entry_name) == 0)
+            return 1;
+    }
+    return 0;
+}

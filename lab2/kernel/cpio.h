@@ -1,3 +1,6 @@
+// Defined in shell.c, filled in from the dtb at boot
+extern char* cpio_base;
+
 typedef struct {
     char c_magic[6];
     char c_ino[8];
@@ -17,3 +20,5 @@ typedef struct {
 
 cpio_newc_header* cpio_next(
     cpio_newc_header* header, unsigned int* filesize, char** name, char** data);
+
+int cpio_find(unsigned int* filesize, char* name, char** data);
