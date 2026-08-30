@@ -6,6 +6,7 @@ void cmd_hello();
 void cmd_help();
 void cmd_ls();
 void cmd_cat();
+void cmd_run();
 void cmd_info_firmware_revision();
 void cmd_info_board_model();
 void cmd_info_board_revision();

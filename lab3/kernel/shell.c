@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "cpio.h"
 #include "mbox.h"
+#include "program.h"
 #include "reboot.h"
 #include "string.h"
 #include "uart.h"
@@ -25,6 +26,9 @@ CMDS cmd_list[] = {
     { .cmd = "cat",
         .message = "print a file from the initramfs",
         .exec_func = cmd_cat },
+    { .cmd = "run",
+        .message = "run user program from the initramfs",
+        .exec_func = cmd_run },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -76,7 +80,7 @@ void cmd_ls()
 void cmd_cat()
 {
     unsigned int filesize;
-    char *data;
+    char* data;
     char input_name[CLI_MAX_LEN] = {};
     uart_puts("Filename: ");
     cmd_read(input_name);
@@ -89,6 +93,22 @@ void cmd_cat()
     for (unsigned int i = 0; i < filesize; i++)
         uart_put(data[i]);
     uart_put('\n');
+}
+
+void cmd_run()
+{
+    unsigned int filesize;
+    char* data;
+    char input_name[CLI_MAX_LEN] = {};
+    uart_puts("Filename: ");
+    cmd_read(input_name);
+    if (!cpio_find(&filesize, input_name, &data)) {
+        uart_puts("run: ");
+        uart_puts(input_name);
+        uart_puts(": No such file\n");
+        return;
+    }
+    run_user_program(data, filesize);
 }
 
 void format_info_output(char* s)
