@@ -4,19 +4,20 @@ CC = aarch64-linux-gnu-gcc
 LD = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 
+SFILES = $(wildcard *.s)
 CFILES = $(wildcard *.c)
-OFILES = $(CFILES:.c=.o)
+OFILES = $(SFILES:.s=.o) $(CFILES:.c=.o)
 
 CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
 
-boot.o: boot.s
-	${CC} $(CFLAGS) -c boot.s -o boot.o
+%.o: %.s
+	${CC} $(CFLAGS) -c $< -o $@
 
 %.o: %.c
 	${CC} $(CFLAGS) -c $< -o $@
 
-kernel8.elf: boot.o $(OFILES) link.ld
-	${LD} -nostdlib boot.o $(OFILES) -T link.ld -o kernel8.elf
+kernel8.elf: $(OFILES) link.ld
+	${LD} -nostdlib $(OFILES) -T link.ld -o kernel8.elf
 
 kernel8.img: kernel8.elf
 	${OBJCOPY} -O binary kernel8.elf kernel8.img

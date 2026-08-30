@@ -28,6 +28,10 @@ from_el2_to_el1:
 	eret
 
 init:
+	// Set exception vector table
+	ldr x1, =exception_vector_table
+	msr vbar_el1, x1
+
 	// Set stack pointer to start, then it will push forward from start
 	ldr x1, =_start
 	mov sp, x1

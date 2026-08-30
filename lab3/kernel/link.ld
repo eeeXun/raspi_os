@@ -7,7 +7,7 @@ SECTIONS
     /* When booting Raspberry Pi, it load the img file from offset 0 to 0x80000 */
     /* And run the first instruction at 0x80000 */
     . = 0x80000;
-    .text : { *(.text.boot) *(.text) }
+    .text : { *(.text.boot) *(.text.vector) *(.text) }
     .rodata : { *(.rodata) }
     .data : { *(.data) }
     .bss : {
