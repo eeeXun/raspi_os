@@ -20,6 +20,12 @@ To modify the cpio content, run
 (cd rootfs && find . | cpio -o -H newc > ../initramfs.cpio)
 ```
 
+Modify user program, run the following command. It will update `initramfs.cpio`
+
+```
+(cd user && make install)
+```
+
 After booting from `bootloader.img`, run the `boot` command. And send the kernel image with
 
 ```
