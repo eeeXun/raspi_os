@@ -104,7 +104,7 @@ void uart_put_dec(unsigned long long num)
         uart_put('0');
         return;
     }
-    int count=0;
+    int count = 0;
     unsigned long long reverse_num = 0;
     while (num) {
         reverse_num = reverse_num * 10 + num % 10;
@@ -123,7 +123,7 @@ void uart_put_hex(unsigned long long num)
         uart_put('0');
         return;
     }
-    int count=0;
+    int count = 0;
     unsigned long long reverse_num = 0;
     while (num) {
         reverse_num <<= 4;
