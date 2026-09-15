@@ -1,10 +1,14 @@
 #include "dtb.h"
+#include "gic.h"
 #include "shell.h"
 #include "uart.h"
 
 int main(void* dtb_base)
 {
     uart_init();
+    gic_init();
+    asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
+
     fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);
     int cmd_ret;
     char buf[CLI_MAX_LEN];

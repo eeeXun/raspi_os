@@ -21,6 +21,11 @@ from_el2_to_el1:
 	mov x1, #0x3C5
 	msr spsr_el2, x1 // Saved Program Status Register, holds the saved process state
 
+	// timer
+	mrs x1, cnthctl_el2
+	orr x1, x1, #0b11   // EL1PCEN (physical timer enable) | EL1PCTEN (physical counter enable)
+	msr cnthctl_el2, x1
+
 	// Where eret lands
 	ldr x1, =init
 	msr elr_el2, x1 // Exception Link Register, holds the address to return to

@@ -54,7 +54,7 @@ exception_vector_table:
 	// Current EL with sp_el0 (EL1t)
 	b      exception_entry // 0x000 synchronous
 	.align 7
-	b      exception_entry // 0x080 IRQ
+	b      irq_entry // 0x080 IRQ
 	.align 7
 	b      exception_entry // 0x100 FIQ
 	.align 7
@@ -64,7 +64,7 @@ exception_vector_table:
 	// Current EL with sp_el1 (EL1h)
 	b      exception_entry // 0x200 synchronous
 	.align 7
-	b      exception_entry // 0x280 IRQ
+	b      irq_entry // 0x280 IRQ
 	.align 7
 	b      exception_entry // 0x300 FIQ
 	.align 7
@@ -74,7 +74,7 @@ exception_vector_table:
 	// Lower EL running AArch64, i.e. the user program at EL0
 	b      exception_entry // 0x400 synchronous (svc, user fault)
 	.align 7
-	b      exception_entry // 0x480 IRQ (timer, uart)
+	b      irq_entry // 0x480 IRQ (timer, uart)
 	.align 7
 	b      exception_entry // 0x500 FIQ
 	.align 7
@@ -84,7 +84,7 @@ exception_vector_table:
 	// Lower EL running AArch32. We never run 32 bit code
 	b      exception_entry // 0x600 synchronous
 	.align 7
-	b      exception_entry // 0x680 IRQ
+	b      irq_entry // 0x680 IRQ
 	.align 7
 	b      exception_entry // 0x700 FIQ
 	.align 7
@@ -96,6 +96,12 @@ exception_vector_table:
 exception_entry:
 	save_all
 	bl exception_handler
+	load_all
+	eret
+
+irq_entry:
+	save_all
+	bl irq_handler
 	load_all
 	eret
 

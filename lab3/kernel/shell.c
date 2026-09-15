@@ -1,9 +1,12 @@
 #include "shell.h"
 #include "cpio.h"
+#include "gic.h"
 #include "mbox.h"
 #include "program.h"
 #include "reboot.h"
+#include "register.h"
 #include "string.h"
+#include "timer.h"
 #include "uart.h"
 #include "utils.h"
 
@@ -29,6 +32,12 @@ CMDS cmd_list[] = {
     { .cmd = "run",
         .message = "run user program from the initramfs",
         .exec_func = cmd_run },
+    { .cmd = "timer-on",
+        .message = "timer interrupt on",
+        .exec_func = cmd_timer_on },
+    { .cmd = "timer-off",
+        .message = "timer interrupt off",
+        .exec_func = cmd_timer_off },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -109,6 +118,20 @@ void cmd_run()
         return;
     }
     run_user_program(data, filesize);
+}
+
+void cmd_timer_on()
+{
+    // [1] = 0, Not masked timer interrupt by IMASK bit
+    // [0] = 1, enable timer
+    write_reg(cntp_ctl_el0, 1);
+    reset_timer(2); // expire in 2 seconds
+    gic_enable(INTID_TIMER);
+}
+
+void cmd_timer_off()
+{
+    write_reg(cntp_ctl_el0, 0); // disable timer
 }
 
 void format_info_output(char* s)
