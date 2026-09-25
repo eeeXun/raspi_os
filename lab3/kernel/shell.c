@@ -108,12 +108,13 @@ void cmd_run(int argc, char* argv[])
 {
     unsigned int filesize;
     char* data;
-    char input_name[CLI_MAX_LEN] = {};
-    uart_puts("Filename: ");
-    cmd_read(input_name);
-    if (!cpio_find(&filesize, input_name, &data)) {
+    if (argc != 2) {
+        uart_puts("Wrong command argument: run [elf file]\n");
+        return;
+    }
+    if (!cpio_find(&filesize, argv[1], &data)) {
         uart_puts("run: ");
-        uart_puts(input_name);
+        uart_puts(argv[1]);
         uart_puts(": No such file\n");
         return;
     }
