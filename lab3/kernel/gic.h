@@ -1,6 +1,7 @@
 // See
 // https://pip-assets.raspberrypi.com/categories/545-raspberry-pi-4-model-b/documents/RP-008248-DS-1-bcm2711-peripherals.pdf
 #define INTID_TIMER 30 // Core n PNS timer IRQ
+#define INTID_AUX 125 // VC peripheral IRQs (96) + AUX (29)
 
 void gic_init();
 void gic_enable(unsigned int intid);

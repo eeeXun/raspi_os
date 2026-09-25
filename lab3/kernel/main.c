@@ -7,6 +7,7 @@ int main(void* dtb_base)
 {
     uart_init();
     gic_init();
+    enable_uart_interrupt();
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
     fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);

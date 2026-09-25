@@ -39,6 +39,9 @@ void irq_handler()
         // Reset timer value
         write_reg(cntp_tval_el0, read_reg(cntfrq_el0) * 2);
         break;
+    case INTID_AUX:
+        uart_irq_handler();
+        break;
     default:
         break;
     }
