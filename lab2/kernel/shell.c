@@ -77,7 +77,7 @@ void cmd_cat()
 {
     unsigned int filesize;
     char *data;
-    char input_name[CLI_MAX_LEN] = {};
+    char input_name[CLI_MAX_LEN + 1] = {};
     uart_puts("Filename: ");
     cmd_read(input_name);
     if (!cpio_find(&filesize, input_name, &data)) {

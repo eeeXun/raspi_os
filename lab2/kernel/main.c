@@ -7,7 +7,7 @@ int main(void* dtb_base)
     uart_init();
     fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);
     int cmd_ret;
-    char buf[CLI_MAX_LEN];
+    char buf[CLI_MAX_LEN + 1] = {};
     while (1) {
         for (int i = 0; i < CLI_MAX_LEN; i++)
             buf[i] = '\0';
