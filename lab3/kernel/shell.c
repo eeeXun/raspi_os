@@ -288,7 +288,7 @@ int cmd_read(char* buf)
     int idx = 0;
     while (1) {
         if (idx >= CLI_MAX_LEN) {
-            uart_puts("\ncommand line to long\n");
+            uart_puts("\ncommand line too long\n");
             return -1;
         }
         char c = uart_getc();
