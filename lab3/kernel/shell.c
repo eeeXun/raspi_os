@@ -12,12 +12,13 @@
 
 char* cpio_base;
 
+#define MAX_ARGS 8
 #define CMD_LEN 32
 #define MSG_LEN 64
 typedef struct {
     char cmd[CMD_LEN];
     char message[MSG_LEN];
-    void (*exec_func)();
+    void (*exec_func)(int argc, char* argv[]);
 } CMDS;
 
 CMDS cmd_list[] = {
@@ -71,9 +72,9 @@ void cmd_not_found(char* buf)
     uart_puts("\n");
 }
 
-void cmd_hello() { uart_puts("Hello World!\n"); }
+void cmd_hello(int argc, char* argv[]) { uart_puts("Hello World!\n"); }
 
-void cmd_ls()
+void cmd_ls(int argc, char* argv[])
 {
     cpio_newc_header* header = (cpio_newc_header*)cpio_base;
     unsigned int filesize;
@@ -86,25 +87,24 @@ void cmd_ls()
     }
 }
 
-void cmd_cat()
+void cmd_cat(int argc, char* argv[])
 {
     unsigned int filesize;
     char* data;
-    char input_name[CLI_MAX_LEN] = {};
-    uart_puts("Filename: ");
-    cmd_read(input_name);
-    if (!cpio_find(&filesize, input_name, &data)) {
-        uart_puts("cat: ");
-        uart_puts(input_name);
-        uart_puts(": No such file\n");
-        return;
+    for (int i = 1; i < argc; i++) {
+        if (!cpio_find(&filesize, argv[i], &data)) {
+            uart_puts("cat: ");
+            uart_puts(argv[i]);
+            uart_puts(": No such file\n");
+            continue;
+        }
+        for (unsigned int j = 0; j < filesize; j++)
+            uart_put(data[j]);
     }
-    for (unsigned int i = 0; i < filesize; i++)
-        uart_put(data[i]);
     uart_put('\n');
 }
 
-void cmd_run()
+void cmd_run(int argc, char* argv[])
 {
     unsigned int filesize;
     char* data;
@@ -120,7 +120,7 @@ void cmd_run()
     run_user_program(data, filesize);
 }
 
-void cmd_timer_on()
+void cmd_timer_on(int argc, char* argv[])
 {
     // [1] = 0, Not masked timer interrupt by IMASK bit
     // [0] = 1, enable timer
@@ -129,7 +129,7 @@ void cmd_timer_on()
     gic_enable(INTID_TIMER);
 }
 
-void cmd_timer_off()
+void cmd_timer_off(int argc, char* argv[])
 {
     write_reg(cntp_ctl_el0, 0); // disable timer
 }
@@ -147,7 +147,7 @@ void format_info_output(char* s)
         uart_put('\t');
 }
 
-void cmd_help()
+void cmd_help(int argc, char* argv[])
 {
     for (int i = 0; i < LEN(cmd_list); i++) {
         format_info_output(cmd_list[i].cmd);
@@ -156,7 +156,7 @@ void cmd_help()
     }
 }
 
-void cmd_info_firmware_revision()
+void cmd_info_firmware_revision(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_FIRMWARE_REVISION)) {
         uart_puts("Get Firmware Revision Failed!\n");
@@ -168,7 +168,7 @@ void cmd_info_firmware_revision()
     uart_put('\n');
 }
 
-void cmd_info_board_model()
+void cmd_info_board_model(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_BOARD_MODEL)) {
         uart_puts("Get Board Model Failed!\n");
@@ -180,7 +180,7 @@ void cmd_info_board_model()
     uart_put('\n');
 }
 
-void cmd_info_board_revision()
+void cmd_info_board_revision(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_BOARD_REVISION)) {
         uart_puts("Get Board Revision Failed!\n");
@@ -192,7 +192,7 @@ void cmd_info_board_revision()
     uart_put('\n');
 }
 
-void cmd_info_mac()
+void cmd_info_mac(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_BOARD_MAC)) {
         uart_puts("Get Mac Address Failed!\n");
@@ -208,7 +208,7 @@ void cmd_info_mac()
     uart_put('\n');
 }
 
-void cmd_info_board_serial()
+void cmd_info_board_serial(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_BOARD_SERIAL)) {
         uart_puts("Get Board serial Failed\n");
@@ -221,7 +221,7 @@ void cmd_info_board_serial()
     uart_put('\n');
 }
 
-void cmd_info_memory()
+void cmd_info_memory(int argc, char* argv[])
 {
     if (!mbox_get_info(MBOX_TAG_ARM_MEMORY)) {
         uart_puts("Get Meomry Failed\n");
@@ -237,33 +237,50 @@ void cmd_info_memory()
     uart_put('\n');
 }
 
-void cmd_info_all()
+void cmd_info_all(int argc, char* argv[])
 {
-    cmd_info_firmware_revision();
-    cmd_info_board_model();
-    cmd_info_board_revision();
-    cmd_info_mac();
-    cmd_info_board_serial();
-    cmd_info_memory();
+    cmd_info_firmware_revision(argc, argv);
+    cmd_info_board_model(argc, argv);
+    cmd_info_board_revision(argc, argv);
+    cmd_info_mac(argc, argv);
+    cmd_info_board_serial(argc, argv);
+    cmd_info_memory(argc, argv);
 }
 
-void cmd_reboot()
+void cmd_reboot(int argc, char* argv[])
 {
     uart_puts("Rebooting...\n");
     reset(100);
 }
 
-void cmd_exec(char* buf)
+void cmd_exec(char* buf, int cmd_len)
 {
-    if (*buf == '\0')
+    int argc = 0;
+    char* argv[MAX_ARGS];
+    for (int i = 0; i < cmd_len;) {
+        while (i < cmd_len && buf[i] == ' ') {
+            buf[i] = '\0';
+            i++;
+        }
+        if (i >= cmd_len)
+            break;
+        if (argc >= MAX_ARGS) {
+            uart_puts("Too many args!\n");
+            return;
+        }
+        argv[argc++] = &buf[i];
+        while (i < cmd_len && buf[i] != ' ')
+            i++;
+    }
+    if (argc == 0)
         return;
     for (int i = 0; i < LEN(cmd_list); i++) {
-        if (strcmp(buf, cmd_list[i].cmd) == 0) {
-            cmd_list[i].exec_func();
+        if (strcmp(argv[0], cmd_list[i].cmd) == 0) {
+            cmd_list[i].exec_func(argc, argv);
             return;
         }
     }
-    cmd_not_found(buf);
+    cmd_not_found(argv[0]);
 }
 
 int cmd_read(char* buf)
@@ -272,7 +289,7 @@ int cmd_read(char* buf)
     while (1) {
         if (idx >= CLI_MAX_LEN) {
             uart_puts("\ncommand line to long\n");
-            return 1;
+            return -1;
         }
         char c = uart_getc();
         if (c == '\b') { // backspace
@@ -284,7 +301,7 @@ int cmd_read(char* buf)
         }
         uart_put(c);
         if (c == '\n')
-            return 0;
+            return idx;
         buf[idx] = c;
         idx++;
     }

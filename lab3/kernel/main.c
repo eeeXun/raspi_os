@@ -11,16 +11,16 @@ int main(void* dtb_base)
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
     fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);
-    int cmd_ret;
+    int cmd_len;
     char buf[CLI_MAX_LEN];
     while (1) {
         for (int i = 0; i < CLI_MAX_LEN; i++)
             buf[i] = '\0';
         uart_puts("# ");
-        cmd_ret = cmd_read(buf);
-        if (cmd_ret != 0)
+        cmd_len = cmd_read(buf);
+        if (cmd_len < 0)
             continue;
-        cmd_exec(buf);
+        cmd_exec(buf, cmd_len);
     }
 
     return 0;
