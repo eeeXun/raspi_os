@@ -1,6 +1,5 @@
 #include "shell.h"
 #include "cpio.h"
-#include "gic.h"
 #include "mbox.h"
 #include "program.h"
 #include "reboot.h"
@@ -33,12 +32,15 @@ CMDS cmd_list[] = {
     { .cmd = "run",
         .message = "run user program from the initramfs",
         .exec_func = cmd_run },
-    { .cmd = "timer-on",
-        .message = "timer interrupt on",
-        .exec_func = cmd_timer_on },
-    { .cmd = "timer-off",
-        .message = "timer interrupt off",
-        .exec_func = cmd_timer_off },
+    { .cmd = "uptime-on",
+        .message = "print uptime every 2s",
+        .exec_func = cmd_uptime_on },
+    { .cmd = "uptime-off",
+        .message = "disable print uptime",
+        .exec_func = cmd_uptime_off },
+    { .cmd = "setTimeout",
+        .message = "setTimeout MESSAGE SECONDS",
+        .exec_func = cmd_set_time_out },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -121,18 +123,17 @@ void cmd_run(int argc, char* argv[])
     run_user_program(data, filesize);
 }
 
-void cmd_timer_on(int argc, char* argv[])
-{
-    // [1] = 0, Not masked timer interrupt by IMASK bit
-    // [0] = 1, enable timer
-    write_reg(cntp_ctl_el0, 1);
-    reset_timer(2); // expire in 2 seconds
-    gic_enable(INTID_TIMER);
-}
+void cmd_uptime_on(int argc, char* argv[]) { enable_uptime(); }
 
-void cmd_timer_off(int argc, char* argv[])
+void cmd_uptime_off(int argc, char* argv[]) { disable_uptime(); }
+
+void cmd_set_time_out(int argc, char* argv[])
 {
-    write_reg(cntp_ctl_el0, 0); // disable timer
+    if (argc != 3) {
+        uart_puts("usage: setTimeout MESSAGE SECONDS\n");
+        return;
+    }
+    add_timeout_task(argv[1], atoi(argv[2]));
 }
 
 void format_info_output(char* s)

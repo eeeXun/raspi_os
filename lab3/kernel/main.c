@@ -1,6 +1,7 @@
 #include "dtb.h"
 #include "gic.h"
 #include "shell.h"
+#include "timer.h"
 #include "uart.h"
 
 int main(void* dtb_base)
@@ -8,6 +9,7 @@ int main(void* dtb_base)
     uart_init();
     gic_init();
     enable_uart_interrupt();
+    timer_init();
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
     fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);
