@@ -43,3 +43,15 @@ void irq_handler()
     }
     gic_eoi(id);
 }
+
+unsigned long long irq_save()
+{
+    unsigned long long daif = read_reg(daif);
+    asm volatile("msr DAIFSet, 0xf"); // disable interrupt
+    return daif;
+}
+
+void irq_restore(unsigned long long daif_state)
+{
+    write_reg(daif, daif_state); // restore daif to previous state
+}

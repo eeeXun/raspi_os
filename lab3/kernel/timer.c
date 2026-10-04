@@ -1,3 +1,4 @@
+#include "exception.h"
 #include "gic.h"
 #include "register.h"
 #include "string.h"
@@ -72,6 +73,8 @@ timer_task* add_timer(void* callback, void* data, int after)
         return 0;
     }
 
+    unsigned long long daif_state = irq_save();
+
     timer_task* task = 0;
     for (int i = 0; i < QUEUE_SIZE; i++) {
         if (task_queue[i].used)
@@ -80,6 +83,7 @@ timer_task* add_timer(void* callback, void* data, int after)
         break;
     }
     if (!task) {
+        irq_restore(daif_state);
         uart_puts("No avaiable timer task to allocate\n");
         return 0;
     }
@@ -94,6 +98,8 @@ timer_task* add_timer(void* callback, void* data, int after)
     *current = task;
     if (task == head)
         reset_timer();
+
+    irq_restore(daif_state);
     return task;
 }
 
