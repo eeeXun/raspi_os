@@ -72,7 +72,7 @@ void tx_push(char c)
     mmio_write(AUX_MU_IER_REG, mmio_read(AUX_MU_IER_REG) | 0b10);
 }
 
-void uart_irq_handler()
+void uart_irq_top_half()
 {
     unsigned int iir = mmio_read(AUX_MU_IIR_REG);
     if ((iir & 0b1)) // Not pending
@@ -98,6 +98,8 @@ void uart_irq_handler()
     }
     }
 }
+
+void uart_irq_bottom_half() { gic_enable(INTID_AUX); }
 
 char uart_getc()
 {

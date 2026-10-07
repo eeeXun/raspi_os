@@ -5,5 +5,6 @@
 
 void gic_init();
 void gic_enable(unsigned int intid);
+void gic_disable(unsigned int intid);
 unsigned int gic_ack();
 void gic_eoi(unsigned int intid);

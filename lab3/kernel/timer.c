@@ -51,8 +51,9 @@ unsigned long long get_uptime()
     return read_reg(cntpct_el0) / read_reg(cntfrq_el0);
 }
 
-void timer_irq_handler()
-{
+void timer_irq_top_half() { return; }
+
+void timer_irq_bottom_half() {
     timer_task* task;
     while (head) {
         unsigned long long current_time = read_reg(cntpct_el0);
@@ -64,6 +65,7 @@ void timer_irq_handler()
         task->used = 0;
     }
     reset_timer();
+    gic_enable(INTID_TIMER);
 }
 
 timer_task* add_timer(void* callback, void* data, int after)

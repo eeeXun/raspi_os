@@ -1,5 +1,6 @@
 #include "gic.h"
 #include "register.h"
+#include "task.h"
 #include "timer.h"
 #include "uart.h"
 
@@ -31,17 +32,21 @@ void exception_handler()
 void irq_handler()
 {
     unsigned int id = gic_ack();
+    gic_disable(id);
     switch (id) {
     case INTID_TIMER:
-        timer_irq_handler();
+        timer_irq_top_half();
+        task_add(timer_irq_bottom_half, PRIO_TIMER);
         break;
     case INTID_AUX:
-        uart_irq_handler();
+        uart_irq_top_half();
+        task_add(uart_irq_bottom_half, PRIO_UART);
         break;
     default:
         break;
     }
     gic_eoi(id);
+    task_run();
 }
 
 unsigned long long irq_save()
@@ -55,3 +60,7 @@ void irq_restore(unsigned long long daif_state)
 {
     write_reg(daif, daif_state); // restore daif to previous state
 }
+
+void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
+
+void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }

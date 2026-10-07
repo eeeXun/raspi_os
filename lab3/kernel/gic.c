@@ -17,6 +17,7 @@
 enum {
     GICD_CTLR = GICD_BASE, // Distributor Control Register
     GICD_ISENABLER = GICD_BASE + 0x100, // Interrupt Set-Enable Registers
+    GICD_ICENABLER = GICD_BASE + 0x180, // Interrupt Clear-Enable Registers
     GICD_ITARGETSR = GICD_BASE + 0x800, // Interrupt Processor Targets Registers
     GICC_CTLR = GICC_BASE, // CPU Interface Control Register
     GICC_PMR = GICC_BASE + 0x4, // CPU Interface Priority Mask Register
@@ -57,6 +58,15 @@ void gic_enable(unsigned int intid)
     // n = intid / 32
     // ISENABLER[n] = GICD_ISENABLER + 4 * n
     long reg = GICD_ISENABLER + ((intid >> 5) << 2);
+    // set bit (intid % 32) in ISENABLER[n]
+    mmio_write(reg, 1 << (intid & 31));
+}
+
+void gic_disable(unsigned int intid)
+{
+    // n = intid / 32
+    // ICENABLER[n] = GICD_ICENABLER + 4 * n
+    long reg = GICD_ICENABLER + ((intid >> 5) << 2);
     // set bit (intid % 32) in ISENABLER[n]
     mmio_write(reg, 1 << (intid & 31));
 }
