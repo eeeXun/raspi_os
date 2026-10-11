@@ -4,8 +4,6 @@
 #include "string.h"
 #include "uart.h"
 
-int uptime_enabled;
-
 #define QUEUE_SIZE 50
 #define TIMEOUT_MSG_LEN 50
 
@@ -24,11 +22,12 @@ typedef struct timer_task {
     struct timer_task* next;
 } timer_task;
 timer_task task_queue[QUEUE_SIZE];
-timer_task* head;
+timer_task* head = 0;
+
+int uptime_enabled = 0;
 
 void timer_init()
 {
-    uptime_enabled = 0;
     gic_enable(INTID_TIMER);
 }
 

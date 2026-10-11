@@ -9,7 +9,7 @@ typedef struct task {
     struct task* next;
 } task;
 task task_pool[QUEUE_SIZE];
-task* task_head;
+task* task_head = 0;
 
 // Only called from the top half in irq_handler, where the hardware has already
 // masked DAIF. Add irq_save/irq_restore if this ever gets called from a bottom
