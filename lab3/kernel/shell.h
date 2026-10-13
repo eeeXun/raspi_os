@@ -10,6 +10,7 @@ void cmd_run(int argc, char* argv[]);
 void cmd_uptime_on(int argc, char* argv[]);
 void cmd_uptime_off(int argc, char* argv[]);
 void cmd_set_time_out(int argc, char* argv[]);
+void cmd_demo_preempt(int argc, char* argv[]);
 void cmd_info_firmware_revision(int argc, char* argv[]);
 void cmd_info_board_model(int argc, char* argv[]);
 void cmd_info_board_revision(int argc, char* argv[]);

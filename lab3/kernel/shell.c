@@ -3,6 +3,7 @@
 #include "mbox.h"
 #include "program.h"
 #include "reboot.h"
+#include "task.h"
 #include "register.h"
 #include "string.h"
 #include "timer.h"
@@ -41,6 +42,9 @@ CMDS cmd_list[] = {
     { .cmd = "setTimeout",
         .message = "setTimeout MESSAGE SECONDS",
         .exec_func = cmd_set_time_out },
+    { .cmd = "demo-preempt",
+        .message = "show a uart task preempting a timer task",
+        .exec_func = cmd_demo_preempt },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -134,6 +138,14 @@ void cmd_set_time_out(int argc, char* argv[])
         return;
     }
     add_timeout_task(argv[1], atoi(argv[2]));
+}
+
+void cmd_demo_preempt(int argc, char* argv[])
+{
+    uart_puts("In 1s a timer task runs for 5s.\n"
+              "Type while it runs to see the uart task preempt it.\n");
+    set_task_trace(1);
+    add_timer(slow_timer_callback, 0, 1);
 }
 
 void format_info_output(char* s)

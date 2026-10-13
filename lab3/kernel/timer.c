@@ -2,6 +2,7 @@
 #include "gic.h"
 #include "register.h"
 #include "string.h"
+#include "task.h"
 #include "uart.h"
 
 #define QUEUE_SIZE 50
@@ -147,6 +148,18 @@ void uptime_callback(void* data)
     uart_put_dec(get_uptime());
     uart_puts("s\n");
     add_timer(uptime_callback, 0, 2);
+}
+
+void slow_timer_callback(void* data)
+{
+    uart_puts_poll("[slow] start, type something now\n");
+
+    unsigned long long end = read_reg(cntpct_el0) + read_reg(cntfrq_el0) * 5;
+    while (read_reg(cntpct_el0) < end)
+        ;
+
+    uart_puts_poll("[slow] end\n");
+    set_task_trace(0);
 }
 
 void enable_uptime()

@@ -1,3 +1,4 @@
+#include "task.h"
 #include "exception.h"
 #include "uart.h"
 
@@ -10,6 +11,11 @@ typedef struct task {
 } task;
 task task_pool[QUEUE_SIZE];
 task* task_head = 0;
+
+int trace_task = 0;
+volatile int current_priority = PRIO_NONE;
+
+void set_task_trace(int status) { trace_task = status; }
 
 // Only called from the top half in irq_handler, where the hardware has already
 // masked DAIF. Add irq_save/irq_restore if this ever gets called from a bottom
@@ -41,15 +47,28 @@ void task_add(void (*callback)(), int priority)
 
 void task_run()
 {
-    task* t;
     while (1) {
-        t = task_head;
-        if (!t)
+        task* t = task_head;
+        if (!t || t->priority >= current_priority)
             return;
         task_head = t->next;
-        enable_interrupt();
-        t->callback();
+        void (*callback)() = t->callback;
         t->used = 0;
+
+        int previous_priority = current_priority;
+        current_priority = t->priority;
+        if (trace_task && previous_priority != PRIO_NONE) {
+            uart_puts_poll("[task] enter prio ");
+            uart_put_dec_poll(t->priority);
+            uart_puts_poll(", preempting ");
+            uart_put_dec_poll(previous_priority);
+            uart_put_poll('\n');
+        }
+
+        enable_interrupt();
+        callback();
         disable_interrupt();
+
+        current_priority = previous_priority;
     }
 }

@@ -118,6 +118,59 @@ char uart_getc()
     return c;
 }
 
+unsigned int uart_write_ready() { return mmio_read(AUX_MU_LSR_REG) & 0x20; }
+
+void uart_put_poll(char c)
+{
+    switch (c) {
+    case '\n':
+    case '\b':
+        while (!uart_write_ready())
+            ;
+        break;
+    }
+    switch (c) {
+    case '\n':
+        mmio_write(AUX_MU_IO_REG, '\r');
+        break;
+    case '\b':
+        mmio_write(AUX_MU_IO_REG, c);
+        while (!uart_write_ready())
+            ;
+        mmio_write(AUX_MU_IO_REG, ' ');
+        break;
+    }
+    while (!uart_write_ready())
+        ;
+    mmio_write(AUX_MU_IO_REG, (unsigned int)c);
+}
+
+void uart_puts_poll(char* s)
+{
+    while (*s) {
+        uart_put_poll(*s++);
+    }
+}
+
+void uart_put_dec_poll(unsigned long long num)
+{
+    if (!num) {
+        uart_put_poll('0');
+        return;
+    }
+    int count = 0;
+    unsigned long long reverse_num = 0;
+    while (num) {
+        reverse_num = reverse_num * 10 + num % 10;
+        num /= 10;
+        count++;
+    }
+    for (int i = 0; i < count; i++) {
+        uart_put_poll((reverse_num % 10) + '0');
+        reverse_num /= 10;
+    }
+}
+
 void uart_put(char c)
 {
     switch (c) {
