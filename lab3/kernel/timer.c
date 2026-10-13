@@ -26,10 +26,7 @@ timer_task* head = 0;
 
 int uptime_enabled = 0;
 
-void timer_init()
-{
-    gic_enable(INTID_TIMER);
-}
+void timer_init() { gic_enable(INTID_TIMER); }
 
 // Set timer to the head's expire
 void reset_timer()
@@ -52,7 +49,8 @@ unsigned long long get_uptime()
 
 void timer_irq_top_half() { return; }
 
-void timer_irq_bottom_half() {
+void timer_irq_bottom_half()
+{
     timer_task* task;
     while (head) {
         unsigned long long current_time = read_reg(cntpct_el0);
