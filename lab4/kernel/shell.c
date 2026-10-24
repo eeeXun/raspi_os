@@ -1,11 +1,11 @@
 #include "shell.h"
 #include "cpio.h"
 #include "mbox.h"
+#include "memory.h"
 #include "program.h"
 #include "reboot.h"
-#include "task.h"
-#include "register.h"
 #include "string.h"
+#include "task.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
@@ -45,6 +45,15 @@ CMDS cmd_list[] = {
     { .cmd = "demo-preempt",
         .message = "show a uart task preempting a timer task",
         .exec_func = cmd_demo_preempt },
+    { .cmd = "buddy-info",
+        .message = "Show buddy system free list",
+        .exec_func = cmd_buddy_info },
+    { .cmd = "alloc-page",
+        .message = "alloc-page [order]",
+        .exec_func = cmd_alloc_page },
+    { .cmd = "free-page",
+        .message = "free-page [address]",
+        .exec_func = cmd_free_page },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -146,6 +155,33 @@ void cmd_demo_preempt(int argc, char* argv[])
               "Type while it runs to see the uart task preempt it.\n");
     set_task_trace(1);
     add_timer(slow_timer_callback, 0, 1);
+}
+
+void cmd_buddy_info(int argc, char* argv[]) { buddy_info(); }
+
+void cmd_alloc_page(int argc, char* argv[])
+{
+    if (argc != 2) {
+        uart_puts("usage: alloc-page [order]\n");
+        return;
+    }
+    int order = atoi(argv[1]);
+    void* address = alloc_page(order);
+    if (!address)
+        return;
+    uart_puts("allocate address: 0x");
+    uart_put_hex((unsigned long)address);
+    uart_put('\n');
+}
+
+void cmd_free_page(int argc, char* argv[])
+{
+    if (argc != 2) {
+        uart_puts("usage: free-page [address]\n");
+        return;
+    }
+    long long address = strtol(argv[1]);
+    free_page(address);
 }
 
 void format_info_output(char* s)

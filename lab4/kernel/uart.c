@@ -152,11 +152,15 @@ void uart_puts_poll(char* s)
     }
 }
 
-void uart_put_dec_poll(unsigned long long num)
+void uart_put_dec_poll(long long num)
 {
     if (!num) {
         uart_put_poll('0');
         return;
+    }
+    if (num < 0) {
+        uart_put_poll('-');
+        num = -num;
     }
     int count = 0;
     unsigned long long reverse_num = 0;
@@ -192,11 +196,15 @@ void uart_puts(char* s)
     }
 }
 
-void uart_put_dec(unsigned long long num)
+void uart_put_dec(long long num)
 {
     if (!num) {
         uart_put('0');
         return;
+    }
+    if (num < 0) {
+        uart_put('-');
+        num = -num;
     }
     int count = 0;
     unsigned long long reverse_num = 0;

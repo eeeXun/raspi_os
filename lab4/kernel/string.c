@@ -18,6 +18,52 @@ int atoi(char* s)
     return ret;
 }
 
+int digit_value(char c, int base)
+{
+    int ret;
+    if (c >= '0' && c <= '9')
+        ret = c - '0';
+    else if (c >= 'a' && c <= 'z')
+        ret = c - 'a' + 10;
+    else if (c >= 'A' && c <= 'Z')
+        ret = c - 'A' + 10;
+    else
+        return -1;
+    return ret < base ? ret : -1;
+}
+
+long long strtol(char* s)
+{
+    long long ret = 0;
+    int neg = 0;
+    int base = 10;
+    while (*s == ' ')
+        s++;
+    if (*s == '-') {
+        neg = 1;
+        s++;
+    }
+    if (*s == '0') {
+        s++;
+        if ((*s == 'b') || (*s == 'B')) {
+            base = 2;
+            s++;
+        } else if ((*s == 'x') || (*s == 'X')) {
+            base = 16;
+            s++;
+        } else {
+            base = 8;
+        }
+    }
+    for (int digit; (digit = digit_value(*s, base)) >= 0; s++) {
+        ret *= base;
+        ret += digit;
+    }
+    if (neg)
+        ret = -ret;
+    return ret;
+}
+
 int strlen(char* s)
 {
     int len = 0;

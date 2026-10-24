@@ -1,6 +1,7 @@
 #pragma once
 
 int atoi(char* s);
+long long strtol(char* s);
 int strlen(char* s);
 int strcmp(char* s1, char* s2);
 int strncmp(char* s1, char* s2, int n);
