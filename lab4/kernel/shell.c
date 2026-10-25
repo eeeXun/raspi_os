@@ -48,12 +48,8 @@ CMDS cmd_list[] = {
     { .cmd = "buddy-info",
         .message = "Show buddy system free list",
         .exec_func = cmd_buddy_info },
-    { .cmd = "alloc-page",
-        .message = "alloc-page [order]",
-        .exec_func = cmd_alloc_page },
-    { .cmd = "free-page",
-        .message = "free-page [address]",
-        .exec_func = cmd_free_page },
+    { .cmd = "malloc", .message = "malloc [size]", .exec_func = cmd_malloc },
+    { .cmd = "free", .message = "free [address]", .exec_func = cmd_free },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -159,14 +155,14 @@ void cmd_demo_preempt(int argc, char* argv[])
 
 void cmd_buddy_info(int argc, char* argv[]) { buddy_info(); }
 
-void cmd_alloc_page(int argc, char* argv[])
+void cmd_malloc(int argc, char* argv[])
 {
     if (argc != 2) {
-        uart_puts("usage: alloc-page [order]\n");
+        uart_puts("usage: malloc [size]\n");
         return;
     }
-    int order = atoi(argv[1]);
-    void* address = alloc_page(order);
+    int size = atoi(argv[1]);
+    void* address = kmalloc(size);
     if (!address)
         return;
     uart_puts("allocate address: 0x");
@@ -174,14 +170,14 @@ void cmd_alloc_page(int argc, char* argv[])
     uart_put('\n');
 }
 
-void cmd_free_page(int argc, char* argv[])
+void cmd_free(int argc, char* argv[])
 {
     if (argc != 2) {
-        uart_puts("usage: free-page [address]\n");
+        uart_puts("usage: free [address]\n");
         return;
     }
     long long address = strtol(argv[1]);
-    free_page(address);
+    kfree((void*)address);
 }
 
 void format_info_output(char* s)
