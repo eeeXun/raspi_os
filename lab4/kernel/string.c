@@ -45,14 +45,20 @@ long long strtol(char* s)
     }
     if (*s == '0') {
         s++;
-        if ((*s == 'b') || (*s == 'B')) {
+        switch (*s) {
+        case 'b':
+        case 'B':
             base = 2;
             s++;
-        } else if ((*s == 'x') || (*s == 'X')) {
+            break;
+        case 'x':
+        case 'X':
             base = 16;
             s++;
-        } else {
+            break;
+        default:
             base = 8;
+            break;
         }
     }
     for (int digit; (digit = digit_value(*s, base)) >= 0; s++) {
