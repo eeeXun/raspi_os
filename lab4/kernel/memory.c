@@ -260,20 +260,20 @@ void free_chunk(unsigned long long address)
 
 void* kmalloc(int size)
 {
+    if (size <= 0) {
+        uart_puts("kmalloc size must greater than 0!\n");
+        return 0;
+    }
     if (size > (FRAME_BASE_SIZE << FRAME_MAX_ORDER)) {
         uart_puts("kmalloc size too large!\n");
         return 0;
     }
     if (size <= chunk_sizes[CHUNK_SIZE_NUM - 1])
         return alloc_chunk(size);
-    void* ptr;
-    for (int order = 0; order <= FRAME_MAX_ORDER; order++) {
-        if ((FRAME_BASE_SIZE << order) < size)
-            continue;
-        ptr = alloc_page(order);
-        break;
-    }
-    return ptr;
+    int order = 0;
+    while ((FRAME_BASE_SIZE << order) < size)
+        order++;
+    return alloc_page(order);
 }
 
 void kfree(void* ptr)
