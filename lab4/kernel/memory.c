@@ -23,14 +23,14 @@ typedef struct chunk_t {
     list_head node;
 } chunk_t;
 
-#define FRAME_BASE_SIZE 0x1000
+#define FRAME_SIZE 0x1000
 #define FRAME_MAX_ORDER 10
-#define FRAME_NUM ((FRAME_END - FRAME_START) / FRAME_BASE_SIZE)
+#define FRAME_NUM ((FRAME_END - FRAME_START) / FRAME_SIZE)
 
 int chunk_sizes[] = { 32, 64, 128, 256, 512, 1024, 2048 };
 #define CHUNK_SIZE_NUM (sizeof(chunk_sizes) / sizeof(int))
 
-unsigned long long frame_base;
+unsigned long long frame_start;
 frame_t frames[FRAME_NUM];
 list_head buddy_freelist[FRAME_MAX_ORDER + 1];
 list_head chunk_freelist[CHUNK_SIZE_NUM];
@@ -39,15 +39,15 @@ int frame_idx(frame_t* frame) { return frame - frames; }
 
 unsigned long long idx_to_frame_addr(int idx)
 {
-    return frame_base + (unsigned long long)idx * FRAME_BASE_SIZE;
+    return frame_start + (unsigned long long)idx * FRAME_SIZE;
 }
 
 int address_to_frame_idx(unsigned long long address)
 {
-    if (address < frame_base
-        || address >= frame_base + FRAME_NUM * FRAME_BASE_SIZE)
+    if (address < frame_start
+        || address >= frame_start + FRAME_NUM * FRAME_SIZE)
         return -1;
-    return (address - frame_base) / FRAME_BASE_SIZE;
+    return (address - frame_start) / FRAME_SIZE;
 }
 
 void buddy_info()
@@ -74,7 +74,7 @@ void buddy_info()
 
 void buddy_init(unsigned long long start, unsigned long long end)
 {
-    frame_base = start;
+    frame_start = start;
     unsigned long long size = end - start;
 
     for (int i = 0; i <= FRAME_MAX_ORDER; i++)
@@ -87,8 +87,7 @@ void buddy_init(unsigned long long start, unsigned long long end)
     }
     for (int order = FRAME_MAX_ORDER, idx = 0; order >= 0 && size > 0;
         order--) {
-        unsigned long long block_size = (unsigned long long)FRAME_BASE_SIZE
-            << order;
+        unsigned long long block_size = (unsigned long long)FRAME_SIZE << order;
         while (size >= block_size) {
             frames[idx].order = order;
             frames[idx].status = FRAME_FREE;
@@ -166,7 +165,7 @@ void __free_page(int frame_idx)
 void free_page(unsigned long long address)
 {
     int idx = address_to_frame_idx(address);
-    if ((idx < 0) || (address % FRAME_BASE_SIZE)) {
+    if ((idx < 0) || (address % FRAME_SIZE)) {
         uart_puts("Invalid address!\n");
         return;
     }
@@ -188,9 +187,8 @@ void alloc_chunk_page(int chunk_size_idx)
     frame_t* chunked_page = &frames[frame_idx];
     chunked_page->status = FRAME_CHUNKED;
     chunked_page->chunk_size_idx = chunk_size_idx;
-    chunked_page->free_chunk_count
-        = FRAME_BASE_SIZE / chunk_sizes[chunk_size_idx];
-    for (int i = 0; i < FRAME_BASE_SIZE / chunk_sizes[chunk_size_idx]; i++) {
+    chunked_page->free_chunk_count = FRAME_SIZE / chunk_sizes[chunk_size_idx];
+    for (int i = 0; i < FRAME_SIZE / chunk_sizes[chunk_size_idx]; i++) {
         list_add_tail(
             &((chunk_t*)((char*)address + i * chunk_sizes[chunk_size_idx]))
                 ->node,
@@ -251,7 +249,7 @@ void free_chunk(unsigned long long address)
         list_add(&chunked_page->chunked_list,
             &chunk_freelist[chunked_page->chunk_size_idx]);
     } else if (chunked_page->free_chunk_count
-        == FRAME_BASE_SIZE / chunk_sizes[chunked_page->chunk_size_idx]) {
+        == FRAME_SIZE / chunk_sizes[chunked_page->chunk_size_idx]) {
         list_del(&chunked_page->chunked_list);
         INIT_LIST_HEAD(&chunked_page->free_chunks);
         __free_page(frame_idx);
@@ -264,14 +262,14 @@ void* kmalloc(int size)
         uart_puts("kmalloc size must greater than 0!\n");
         return 0;
     }
-    if (size > (FRAME_BASE_SIZE << FRAME_MAX_ORDER)) {
+    if (size > (FRAME_SIZE << FRAME_MAX_ORDER)) {
         uart_puts("kmalloc size too large!\n");
         return 0;
     }
     if (size <= chunk_sizes[CHUNK_SIZE_NUM - 1])
         return alloc_chunk(size);
     int order = 0;
-    while ((FRAME_BASE_SIZE << order) < size)
+    while ((FRAME_SIZE << order) < size)
         order++;
     return alloc_page(order);
 }
