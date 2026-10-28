@@ -2,11 +2,17 @@
 #include "list.h"
 #include "uart.h"
 
+typedef struct mem_range {
+    unsigned long long start;
+    unsigned long long end;
+} mem_range;
+
 typedef enum {
     FRAME_FREE,
     FRAME_ALLOCATED,
     FRAME_CHUNKED,
-    FRAME_BODY
+    FRAME_BODY,
+    FRAME_RESERVED
 } frame_status;
 
 typedef struct frame_t {
@@ -30,6 +36,10 @@ typedef struct chunk_t {
 int chunk_sizes[] = { 32, 64, 128, 256, 512, 1024, 2048 };
 #define CHUNK_SIZE_NUM (sizeof(chunk_sizes) / sizeof(int))
 
+#define RESERVED_MAX_COUNT 16
+int reserved_count = 0;
+mem_range reserved[RESERVED_MAX_COUNT];
+
 unsigned long long frame_start;
 frame_t frames[FRAME_NUM];
 list_head buddy_freelist[FRAME_MAX_ORDER + 1];
@@ -48,6 +58,26 @@ int address_to_frame_idx(unsigned long long address)
         || address >= frame_start + FRAME_NUM * FRAME_SIZE)
         return -1;
     return (address - frame_start) / FRAME_SIZE;
+}
+
+void memory_reserve(unsigned long long start, unsigned long long end)
+{
+    if (reserved_count >= RESERVED_MAX_COUNT) {
+        uart_puts("No more space to reserved memory!\n");
+        return;
+    }
+    if (start >= end) {
+        uart_puts("start must greater than end!\n");
+        return;
+    }
+    start = start & ~(FRAME_SIZE - 1);
+    end = (end + FRAME_SIZE - 1) & ~(FRAME_SIZE - 1);
+    int i = reserved_count++;
+    while (i > 0 && reserved[i - 1].start > start) {
+        reserved[i] = reserved[i - 1];
+        i--;
+    }
+    reserved[i] = (mem_range) { start, end };
 }
 
 void buddy_info()
@@ -72,10 +102,35 @@ void buddy_info()
     }
 }
 
+int clamp_idx(unsigned long long address, unsigned long long start,
+    unsigned long long end)
+{
+    if (address < start)
+        address = start;
+    if (address > end)
+        address = end;
+    return (address - start) / FRAME_SIZE;
+}
+
+void add_free_range(int idx, int end_idx)
+{
+    while (idx < end_idx) {
+        int block_size = end_idx - idx;
+        int order = FRAME_MAX_ORDER;
+        while (order > 0
+            && ((idx % (1 << order)) // not align
+                || (1 << order) > block_size))
+            order--;
+        frames[idx].status = FRAME_FREE;
+        frames[idx].order = order;
+        list_add_tail(&frames[idx].buddy_list, &buddy_freelist[order]);
+        idx += (1 << order);
+    }
+}
+
 void buddy_init(unsigned long long start, unsigned long long end)
 {
     frame_start = start;
-    unsigned long long size = end - start;
 
     for (int i = 0; i <= FRAME_MAX_ORDER; i++)
         INIT_LIST_HEAD(&buddy_freelist[i]);
@@ -85,17 +140,18 @@ void buddy_init(unsigned long long start, unsigned long long end)
         frames[i].status = FRAME_BODY;
         INIT_LIST_HEAD(&frames[i].free_chunks);
     }
-    for (int order = FRAME_MAX_ORDER, idx = 0; order >= 0 && size > 0;
-        order--) {
-        unsigned long long block_size = (unsigned long long)FRAME_SIZE << order;
-        while (size >= block_size) {
-            frames[idx].order = order;
-            frames[idx].status = FRAME_FREE;
-            list_add_tail(&frames[idx].buddy_list, &buddy_freelist[order]);
-            size -= block_size;
-            idx += (1 << order);
-        }
+    int current_idx = 0;
+    for (int i = 0; i < reserved_count; i++) {
+        int reserved_start_idx = clamp_idx(reserved[i].start, start, end);
+        int reserved_end_idx = clamp_idx(reserved[i].end, start, end);
+        add_free_range(current_idx, reserved_start_idx);
+        for (int j = reserved_start_idx; j < reserved_end_idx; j++)
+            frames[j].status = FRAME_RESERVED;
+        if (reserved_end_idx > current_idx)
+            current_idx = reserved_end_idx;
     }
+    int end_idx = (end - start) / FRAME_SIZE;
+    add_free_range(current_idx, end_idx);
 }
 
 void* alloc_page(int order)
