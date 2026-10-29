@@ -1,6 +1,5 @@
 #pragma once
 
-// Defined in shell.c, filled in from the dtb at boot
 extern char* cpio_base;
 
 typedef struct {

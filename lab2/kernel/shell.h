@@ -1,7 +1,5 @@
 #define CLI_MAX_LEN 50
 
-extern char* cpio_base;
-
 void cmd_hello();
 void cmd_help();
 void cmd_ls();

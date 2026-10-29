@@ -10,8 +10,6 @@
 #include "uart.h"
 #include "utils.h"
 
-char* cpio_base;
-
 #define MAX_ARGS 8
 #define CMD_LEN 32
 #define MSG_LEN 64

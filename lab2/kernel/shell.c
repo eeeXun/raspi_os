@@ -6,8 +6,6 @@
 #include "uart.h"
 #include "utils.h"
 
-char* cpio_base;
-
 #define CMD_LEN 32
 #define MSG_LEN 64
 typedef struct {

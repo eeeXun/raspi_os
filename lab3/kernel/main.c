@@ -1,3 +1,4 @@
+#include "cpio.h"
 #include "dtb.h"
 #include "gic.h"
 #include "shell.h"

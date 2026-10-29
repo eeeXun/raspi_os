@@ -1,10 +1,11 @@
 #include "cpio.h"
 #include "string.h"
-#include "uart.h"
 #include "utils.h"
 
 #define CPIO_MAGIC "070701"
 #define CPIO_TRAILER "TRAILER!!!"
+
+char* cpio_base;
 
 unsigned int hex2int(char* str)
 {
