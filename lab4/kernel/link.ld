@@ -7,6 +7,7 @@ SECTIONS
     /* When booting Raspberry Pi, it load the img file from offset 0 to 0x80000 */
     /* And run the first instruction at 0x80000 */
     . = 0x80000;
+    __kernel_start = .;
     .text : { *(.text.boot) *(.text.vector) *(.text) }
     .rodata : { *(.rodata) }
     .data : { *(.data) }
@@ -18,6 +19,8 @@ SECTIONS
         *(.bss)
         __bss_end = .;
     }
+    . = ALIGN(16);
+    __kernel_end = .;
 }
 /* We move and clean bss section with 8 bytes */
 __bss_size = (__bss_end - __bss_start) >> 3;

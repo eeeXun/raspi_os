@@ -33,6 +33,9 @@ typedef struct chunk_t {
 #define FRAME_MAX_ORDER 10
 #define FRAME_NUM ((FRAME_END - FRAME_START) / FRAME_SIZE)
 
+extern char __kernel_end[];
+char* heap_ptr = __kernel_end;
+
 int chunk_sizes[] = { 32, 64, 128, 256, 512, 1024, 2048 };
 #define CHUNK_SIZE_NUM (sizeof(chunk_sizes) / sizeof(int))
 
@@ -44,6 +47,13 @@ unsigned long long frame_start;
 frame_t frames[FRAME_NUM];
 list_head buddy_freelist[FRAME_MAX_ORDER + 1];
 list_head chunk_freelist[CHUNK_SIZE_NUM];
+
+void* simple_malloc(unsigned long long size)
+{
+    void* ptr = heap_ptr;
+    heap_ptr += (size + 15) & (~15ULL); // align to next 16 bytes
+    return ptr;
+}
 
 int frame_idx(frame_t* frame) { return frame - frames; }
 
