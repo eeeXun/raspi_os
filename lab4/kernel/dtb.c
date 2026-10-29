@@ -32,22 +32,25 @@ unsigned int be2le(unsigned int num)
         | (num << 24);
 }
 
-void fdt_traverse(void* dtb_base, char* target_name, char** target_value)
+void* fdt_traverse(
+    void* dtb_base, char* node_name, char* prop_name, int* prop_len)
 {
     fdt_header* header = (fdt_header*)(dtb_base);
 
     if (be2le(header->magic) != FDT_MAGIC)
-        return;
+        return 0;
 
     char* structure_head = (char*)header + be2le(header->off_dt_struct);
     char* string_head = (char*)header + be2le(header->off_dt_strings);
+    char* current_node = 0;
 
     while (1) {
         unsigned int token = be2le(*((unsigned int*)structure_head));
         structure_head += sizeof(unsigned int);
         switch (token) {
         case FDT_BEGIN_NODE:
-            // +1 mean '\0' byte
+            current_node = structure_head;
+            // +1 is for '\0' byte
             structure_head += align4(strlen(structure_head) + 1);
             break;
         case FDT_PROP: {
@@ -55,22 +58,10 @@ void fdt_traverse(void* dtb_base, char* target_name, char** target_value)
             unsigned int len = be2le(prop->len);
             char* name = string_head + be2le(prop->nameoff);
             structure_head += sizeof(fdt_prop);
-            if (strcmp(name, target_name) == 0) {
-                switch (len) {
-                case 4:
-                    *target_value = (char*)(unsigned long long)be2le(
-                        *(unsigned int*)(structure_head));
-                    break;
-                case 8: {
-                    unsigned long long hi = (unsigned long long)be2le(
-                        *(unsigned int*)structure_head);
-                    unsigned long long lo = (unsigned long long)be2le(
-                        *(unsigned int*)(structure_head + 4));
-                    *target_value = (char*)(hi << 32 | lo);
-                    break;
-                }
-                }
-                return;
+            if ((!node_name || strcmp(current_node, node_name) == 0)
+                && strcmp(name, prop_name) == 0) {
+                *prop_len = len;
+                return structure_head;
             }
             structure_head += align4(len);
             break;
@@ -79,7 +70,15 @@ void fdt_traverse(void* dtb_base, char* target_name, char** target_value)
         case FDT_NOP:
             break;
         default:
-            return;
+            return 0;
         }
     }
+}
+
+unsigned long long fdt_read_cells(void* address, int cells)
+{
+    unsigned long long ret = 0;
+    for (int i = 0; i < cells; i++)
+        ret = (ret << 32) | be2le(*(unsigned int*)(address + i * 4));
+    return ret;
 }
