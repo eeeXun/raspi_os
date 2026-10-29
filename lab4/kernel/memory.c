@@ -20,8 +20,10 @@ typedef struct frame_t {
     int order;
     int chunk_size_idx;
     int free_chunk_count;
-    list_head buddy_list;
-    list_head chunked_list;
+    union {
+        list_head buddy_list;
+        list_head chunked_list;
+    };
     list_head free_chunks;
 } frame_t;
 
