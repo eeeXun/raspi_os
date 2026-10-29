@@ -13,7 +13,7 @@ int main(void* dtb_base)
     timer_init();
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
-    fdt_tranverse(dtb_base, "linux,initrd-start", &cpio_base);
+    fdt_traverse(dtb_base, "linux,initrd-start", &cpio_base);
     buddy_init(FRAME_START, FRAME_END);
     int cmd_len;
     char buf[CLI_MAX_LEN + 1] = {};

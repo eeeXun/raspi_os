@@ -32,7 +32,7 @@ unsigned int be2le(unsigned int num)
         | (num << 24);
 }
 
-void fdt_tranverse(void* dtb_base, char* target_name, char** target_value)
+void fdt_traverse(void* dtb_base, char* target_name, char** target_value)
 {
     fdt_header* header = (fdt_header*)(dtb_base);
 
