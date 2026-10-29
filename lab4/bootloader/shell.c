@@ -5,7 +5,7 @@
 #include "utils.h"
 
 char* _dtb_base;
-extern char* _kernel_start; // define in linker script
+extern char _kernel_start[]; // define in linker script
 
 #define CMD_LEN 32
 #define MSG_LEN 64
@@ -67,13 +67,12 @@ void cmd_boot()
     uart_put_dec(size);
     uart_put('\n');
 
-    char* kernel_entry = (char*)(&_kernel_start);
     for (int i = 0; i < size; i++)
-        kernel_entry[i] = uart_getb();
+        _kernel_start[i] = uart_getb();
     uart_puts("Load img successfully\n");
     uart_puts("Start booting\n");
 
-    ((void (*)(char*))kernel_entry)(_dtb_base);
+    ((void (*)(char*))_kernel_start)(_dtb_base);
 }
 
 void cmd_reboot()
