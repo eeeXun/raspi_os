@@ -19,7 +19,9 @@ typedef struct {
     char c_check[8];
 } cpio_newc_header;
 
-cpio_newc_header* cpio_next(
-    cpio_newc_header* header, unsigned int* filesize, char** name, char** data);
+void initrd_init(void* dtb_base);
 
-int cpio_find(unsigned int* filesize, char* name, char** data);
+cpio_newc_header* cpio_next(
+    cpio_newc_header* header, long long* filesize, char** name, char** data);
+
+int cpio_find(long long* filesize, char* name, char** data);

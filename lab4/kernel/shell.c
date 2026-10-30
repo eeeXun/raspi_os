@@ -86,7 +86,7 @@ void cmd_hello(int argc, char* argv[]) { uart_puts("Hello World!\n"); }
 void cmd_ls(int argc, char* argv[])
 {
     cpio_newc_header* header = (cpio_newc_header*)cpio_base;
-    unsigned int filesize;
+    long long filesize;
     char *name, *data;
     while ((header = cpio_next(header, &filesize, &name, &data)) != 0) {
         if (strcmp(name, ".") == 0)
@@ -98,7 +98,7 @@ void cmd_ls(int argc, char* argv[])
 
 void cmd_cat(int argc, char* argv[])
 {
-    unsigned int filesize;
+    long long filesize;
     char* data;
     for (int i = 1; i < argc; i++) {
         if (!cpio_find(&filesize, argv[i], &data)) {
@@ -115,7 +115,7 @@ void cmd_cat(int argc, char* argv[])
 
 void cmd_run(int argc, char* argv[])
 {
-    unsigned int filesize;
+    long long filesize;
     char* data;
     if (argc != 2) {
         uart_puts("Wrong command argument: run [elf file]\n");

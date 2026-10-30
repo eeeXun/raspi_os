@@ -1,5 +1,4 @@
 #include "cpio.h"
-#include "dtb.h"
 #include "gic.h"
 #include "memory.h"
 #include "shell.h"
@@ -14,14 +13,7 @@ int main(void* dtb_base)
     timer_init();
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
-    int fdt_prop_len;
-    void* fdt_prop_addr;
-    fdt_prop_addr
-        = fdt_traverse(dtb_base, 0, "linux,initrd-start", &fdt_prop_len);
-    if (fdt_prop_addr)
-        cpio_base = (char*)fdt_read_cells(
-            fdt_prop_addr, fdt_prop_len / 4 // 1 cell = 4 byte
-        );
+    initrd_init(dtb_base);
     buddy_init(FRAME_START, FRAME_END);
     int cmd_len;
     char buf[CLI_MAX_LEN + 1] = {};
