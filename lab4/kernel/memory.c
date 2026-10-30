@@ -67,7 +67,7 @@ void memory_reserve(unsigned long long start, unsigned long long end)
         return;
     }
     if (start >= end) {
-        uart_puts("start must greater than end!\n");
+        uart_puts("end must greater than start!\n");
         return;
     }
     start = start & ~(FRAME_SIZE - 1);
