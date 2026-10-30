@@ -1,22 +1,32 @@
 #include "cpio.h"
 #include "dtb.h"
 #include "string.h"
+#include "uart.h"
 #include "utils.h"
 
 #define CPIO_MAGIC "070701"
 #define CPIO_TRAILER "TRAILER!!!"
 
 char* cpio_base;
+char* cpio_end;
 
 void initrd_init(void* dtb_base)
 {
     int prop_len;
     void* prop_addr;
-    prop_addr = fdt_traverse(dtb_base, 0, "linux,initrd-start", &prop_len);
-    if (prop_addr)
-        cpio_base
-            = (char*)fdt_read_cells(prop_addr, prop_len / 4 // 1 cell = 4 byte
-            );
+    prop_addr
+        = fdt_traverse(dtb_base, "chosen", "linux,initrd-start", &prop_len);
+    if (!prop_addr) {
+        uart_puts("Parsing initrd-start error!\n");
+        return;
+    }
+    cpio_base = (char*)fdt_read_cells(prop_addr, prop_len / 4);
+    prop_addr = fdt_traverse(dtb_base, "chosen", "linux,initrd-end", &prop_len);
+    if (!prop_addr) {
+        uart_puts("Parsing initrd-end error!\n");
+        return;
+    }
+    cpio_end = (char*)fdt_read_cells(prop_addr, prop_len / 4);
 }
 
 long long hex2longlong(char* str)

@@ -1,6 +1,7 @@
 #pragma once
 
 extern char* cpio_base;
+extern char* cpio_end;
 
 typedef struct {
     char c_magic[6];

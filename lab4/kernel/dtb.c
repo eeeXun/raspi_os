@@ -32,6 +32,11 @@ unsigned int be2le(unsigned int num)
         | (num << 24);
 }
 
+void* fdt_get_end(void* dtb_base)
+{
+    return dtb_base + be2le(((fdt_header*)dtb_base)->totalsize);
+}
+
 void* fdt_traverse(
     void* dtb_base, char* node_name, char* prop_name, int* prop_len)
 {
