@@ -11,11 +11,12 @@ int main(void* dtb_base)
     gic_init();
     enable_uart_interrupt();
     timer_init();
-    asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
-
     initrd_init(dtb_base);
     memory_init(dtb_base);
     buddy_init();
+
+    asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
+
     int cmd_len;
     char buf[CLI_MAX_LEN + 1] = {};
     while (1) {
