@@ -45,3 +45,15 @@ void list_del(list_head* node)
     prev->next = next;
     next->prev = prev;
 }
+
+void list_move(list_head* node, list_head* head)
+{
+    list_del(node);
+    list_add(node, head);
+}
+
+void list_move_tail(list_head* node, list_head* head)
+{
+    list_del(node);
+    list_add_tail(node, head);
+}

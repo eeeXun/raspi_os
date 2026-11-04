@@ -1,6 +1,7 @@
 #include "gic.h"
 #include "gpio.h"
 #include "mmio.h"
+#include "thread.h"
 
 #define BUF_SIZE 256
 #define NEXT(i) (((i) + 1) % BUF_SIZE)
@@ -104,7 +105,7 @@ void uart_irq_bottom_half() { gic_enable(INTID_AUX); }
 char uart_getc()
 {
     while (rx_tail == rx_head)
-        asm volatile("wfi");
+        schedule();
     char c = rx_buf[rx_tail];
     switch (c) {
     case '\r':

@@ -2,6 +2,7 @@
 #include "gic.h"
 #include "memory.h"
 #include "shell.h"
+#include "thread.h"
 #include "timer.h"
 #include "uart.h"
 
@@ -14,6 +15,8 @@ int main(void* dtb_base)
     initrd_init(dtb_base);
     memory_init(dtb_base);
     buddy_init();
+    thread_init();
+    thread_create(idle_thread);
 
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 

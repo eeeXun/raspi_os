@@ -14,6 +14,7 @@ void cmd_demo_preempt(int argc, char* argv[]);
 void cmd_buddy_info(int argc, char* argv[]);
 void cmd_malloc(int argc, char* argv[]);
 void cmd_free(int argc, char* argv[]);
+void cmd_thread_test(int argc, char* argv[]);
 void cmd_info_firmware_revision(int argc, char* argv[]);
 void cmd_info_board_model(int argc, char* argv[]);
 void cmd_info_board_revision(int argc, char* argv[]);

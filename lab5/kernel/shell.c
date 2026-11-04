@@ -6,6 +6,7 @@
 #include "reboot.h"
 #include "string.h"
 #include "task.h"
+#include "thread.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
@@ -48,6 +49,9 @@ CMDS cmd_list[] = {
         .exec_func = cmd_buddy_info },
     { .cmd = "malloc", .message = "malloc [size]", .exec_func = cmd_malloc },
     { .cmd = "free", .message = "free [address]", .exec_func = cmd_free },
+    { .cmd = "thread-test",
+        .message = "test thread",
+        .exec_func = cmd_thread_test },
     { .cmd = "reboot",
         .message = "reboot raspberry pi",
         .exec_func = cmd_reboot },
@@ -176,6 +180,25 @@ void cmd_free(int argc, char* argv[])
     }
     long long address = strtol(argv[1]);
     kfree((void*)address);
+}
+
+void foo()
+{
+    for (int i = 0; i < 10; i++) {
+        uart_puts("Thread id: ");
+        uart_put_dec(get_current_thread()->tid);
+        uart_puts(" ");
+        uart_put_dec(i);
+        uart_put('\n');
+        delay(1000000);
+        schedule();
+    }
+}
+
+void cmd_thread_test(int argc, char* argv[])
+{
+    for (int i = 0; i < 3; i++)
+        thread_create(foo);
 }
 
 void format_info_output(char* s)
