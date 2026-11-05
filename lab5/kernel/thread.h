@@ -20,6 +20,8 @@ typedef struct thread_t {
     int tid;
     void (*func)();
     void* kernel_stack;
+    void* user_program;
+    void* user_stack;
     list_head list_node;
 } thread_t;
 

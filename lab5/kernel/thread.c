@@ -26,6 +26,10 @@ void idle_thread()
         list_for_each_entry_safe(thread, safe, &zombie_queue, list_node)
         {
             list_del(&thread->list_node);
+            if (thread->user_program)
+                kfree(thread->user_program);
+            if (thread->user_stack)
+                kfree(thread->user_stack);
             kfree(thread->kernel_stack);
             kfree(thread);
         }
@@ -59,6 +63,8 @@ void thread_create(void (*func)())
     thread->context.lr = (unsigned long long)thread_entry;
     thread->context.sp
         = (unsigned long long)thread->kernel_stack + THREAD_STACK_SIZE;
+    thread->user_program = 0;
+    thread->user_stack = 0;
     list_add_tail(&thread->list_node, &run_queue);
 }
 
@@ -71,6 +77,8 @@ void thread_init()
     thread->status = RUNNING;
     thread->tid = next_tid++;
     thread->func = 0;
+    thread->user_program = 0;
+    thread->user_stack = 0;
     write_reg(tpidr_el1, thread);
     list_add_tail(&thread->list_node, &run_queue);
 }
