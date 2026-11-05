@@ -1,11 +1,34 @@
 #include "gic.h"
 #include "register.h"
+#include "syscall.h"
 #include "task.h"
 #include "timer.h"
 #include "uart.h"
 
-void exception_handler()
+unsigned long long irq_save()
 {
+    unsigned long long daif = read_reg(daif);
+    asm volatile("msr DAIFSet, 0xf"); // disable interrupt
+    return daif;
+}
+
+void irq_restore(unsigned long long daif_state)
+{
+    write_reg(daif, daif_state); // restore daif to previous state
+}
+
+void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
+
+void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
+
+void exception_handler(trap_frame* tf)
+{
+    // EC = SVC from AArch64
+    if (((read_reg(esr_el1) >> 26) & 0b111111) == 0b010101) {
+        enable_interrupt();
+        system_call(tf);
+        return;
+    }
     uart_puts("### exception handler start ###\n");
 
     // Saved Program Status Register
@@ -48,19 +71,3 @@ void irq_handler()
     gic_eoi(id);
     task_run();
 }
-
-unsigned long long irq_save()
-{
-    unsigned long long daif = read_reg(daif);
-    asm volatile("msr DAIFSet, 0xf"); // disable interrupt
-    return daif;
-}
-
-void irq_restore(unsigned long long daif_state)
-{
-    write_reg(daif, daif_state); // restore daif to previous state
-}
-
-void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
-
-void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }

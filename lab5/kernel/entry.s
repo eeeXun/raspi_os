@@ -17,7 +17,8 @@ stp    x22, x23, [sp, 16 * 11]
 stp    x24, x25, [sp, 16 * 12]
 stp    x26, x27, [sp, 16 * 13]
 stp    x28, x29, [sp, 16 * 14]
-str    x30, [sp, 16 * 15]
+mrs    x9, sp_el0
+stp    x30, x9, [sp, 16 * 15]
 mrs    x9, spsr_el1
 mrs    x10, elr_el1
 stp    x9, x10, [sp, 16 * 16]
@@ -29,6 +30,8 @@ stp    x9, x10, [sp, 16 * 16]
 ldp    x9, x10, [sp, 16 * 16]
 msr    spsr_el1, x9
 msr    elr_el1, x10
+ldr    x9, [sp, 16 * 15 + 8]
+msr    sp_el0, x9
 ldp    x0, x1, [sp, 16 * 0]
 ldp    x2, x3, [sp, 16 * 1]
 ldp    x4, x5, [sp, 16 * 2]
@@ -101,7 +104,8 @@ exception_vector_table:
 
 exception_entry:
 	save_all
-	bl exception_handler
+	mov x0, sp
+	bl  exception_handler // void exception_handler(trap_frame* tf)
 	load_all
 	eret
 
