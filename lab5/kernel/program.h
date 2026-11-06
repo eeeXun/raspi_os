@@ -1,3 +1,3 @@
 #pragma once
 
-void run_user_program(char* data, long long size);
+void user_entry(void* name);

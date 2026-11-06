@@ -19,7 +19,7 @@ void schedule()
         switch_to(current, next);
 }
 
-void idle_thread()
+void idle_thread(void* arg)
 {
     thread_t *thread, *safe;
     while (1) {
@@ -48,17 +48,36 @@ void thread_exit()
 
 void thread_entry()
 {
-    get_current_thread()->func();
+    thread_t* thread = get_current_thread();
+    thread->func(thread->arg);
     thread_exit();
 }
 
-void thread_create(void (*func)())
+int thread_alive(int tid)
+{
+    thread_t* thread;
+    list_for_each_entry(thread, &run_queue, list_node)
+    {
+        if (thread->tid == tid)
+            return 1;
+    }
+    return 0;
+}
+
+void thread_wait(int tid)
+{
+    while (thread_alive(tid))
+        schedule();
+}
+
+int thread_create(void (*func)(void*), void* arg)
 {
     thread_t* thread = kmalloc(sizeof(thread_t));
     thread->kernel_stack = kmalloc(THREAD_STACK_SIZE);
     thread->status = RUNNING;
     thread->tid = next_tid++;
     thread->func = func;
+    thread->arg = arg;
     thread->context.fp = 0;
     thread->context.lr = (unsigned long long)thread_entry;
     thread->context.sp
@@ -66,6 +85,7 @@ void thread_create(void (*func)())
     thread->user_program = 0;
     thread->user_stack = 0;
     list_add_tail(&thread->list_node, &run_queue);
+    return thread->tid;
 }
 
 void thread_init()

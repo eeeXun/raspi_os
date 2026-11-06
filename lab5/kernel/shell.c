@@ -119,19 +119,12 @@ void cmd_cat(int argc, char* argv[])
 
 void cmd_run(int argc, char* argv[])
 {
-    long long filesize;
-    char* data;
     if (argc != 2) {
         uart_puts("Wrong command argument: run [elf file]\n");
         return;
     }
-    if (!cpio_find(&filesize, argv[1], &data)) {
-        uart_puts("run: ");
-        uart_puts(argv[1]);
-        uart_puts(": No such file\n");
-        return;
-    }
-    run_user_program(data, filesize);
+    int tid = thread_create(user_entry, argv[1]);
+    thread_wait(tid);
 }
 
 void cmd_uptime_on(int argc, char* argv[]) { enable_uptime(); }
@@ -182,7 +175,7 @@ void cmd_free(int argc, char* argv[])
     kfree((void*)address);
 }
 
-void foo()
+void foo(void* arg)
 {
     for (int i = 0; i < 10; i++) {
         uart_puts("Thread id: ");
@@ -198,7 +191,7 @@ void foo()
 void cmd_thread_test(int argc, char* argv[])
 {
     for (int i = 0; i < 3; i++)
-        thread_create(foo);
+        thread_create(foo, 0);
 }
 
 void format_info_output(char* s)

@@ -18,7 +18,8 @@ typedef struct thread_t {
     cpu_context context;
     thread_status status;
     int tid;
-    void (*func)();
+    void (*func)(void*);
+    void* arg;
     void* kernel_stack;
     void* user_program;
     void* user_stack;
@@ -29,6 +30,9 @@ extern void switch_to(thread_t* current, thread_t* next);
 extern thread_t* get_current_thread();
 
 void schedule();
-void idle_thread();
-void thread_create(void (*func)());
+void idle_thread(void* arg);
+void thread_exit();
+int thread_alive(int tid);
+void thread_wait(int tid);
+int thread_create(void (*func)(void*), void* arg);
 void thread_init();
