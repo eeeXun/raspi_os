@@ -39,6 +39,7 @@ void system_call(trap_frame* tf)
     case 4:
         break;
     case 5:
+        thread_exit();
         break;
     case 6:
         break;
