@@ -101,4 +101,6 @@ void thread_init()
     thread->user_stack = 0;
     write_reg(tpidr_el1, thread);
     list_add_tail(&thread->list_node, &run_queue);
+    // Create idle thread
+    thread_create(idle_thread, 0);
 }

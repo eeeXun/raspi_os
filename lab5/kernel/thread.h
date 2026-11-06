@@ -30,7 +30,6 @@ extern void switch_to(thread_t* current, thread_t* next);
 extern thread_t* get_current_thread();
 
 void schedule();
-void idle_thread(void* arg);
 void thread_exit();
 int thread_alive(int tid);
 void thread_wait(int tid);

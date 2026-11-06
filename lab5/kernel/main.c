@@ -16,7 +16,6 @@ int main(void* dtb_base)
     memory_init(dtb_base);
     buddy_init();
     thread_init();
-    thread_create(idle_thread, 0);
 
     asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
 
