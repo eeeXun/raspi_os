@@ -31,6 +31,7 @@ extern thread_t* get_current_thread();
 
 void schedule();
 void thread_exit();
+void thread_kill(int tid);
 int thread_alive(int tid);
 void thread_wait(int tid);
 int thread_create(void (*func)(void*), void* arg);

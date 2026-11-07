@@ -66,6 +66,7 @@ void system_call(trap_frame* tf)
     case 6:
         break;
     case 7:
+        thread_kill(tf->x[0]);
         break;
     default:
         break;

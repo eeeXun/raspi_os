@@ -46,6 +46,23 @@ void thread_exit()
     schedule();
 }
 
+void thread_kill(int tid)
+{
+    if (tid == get_current_thread()->tid) {
+        thread_exit();
+        return;
+    }
+    thread_t* thread;
+    list_for_each_entry(thread, &run_queue, list_node) {
+        if (thread->tid != tid)
+            continue;
+        thread->status = DEAD;
+        list_del(&thread->list_node);
+        list_add_tail(&thread->list_node, &zombie_queue);
+        return;
+    }
+}
+
 void thread_entry()
 {
     thread_t* thread = get_current_thread();
