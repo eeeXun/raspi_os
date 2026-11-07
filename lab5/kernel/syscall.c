@@ -1,5 +1,6 @@
 #include "syscall.h"
 #include "cpio.h"
+#include "mbox.h"
 #include "memory.h"
 #include "program.h"
 #include "thread.h"
@@ -64,6 +65,7 @@ void system_call(trap_frame* tf)
         thread_exit();
         break;
     case 6:
+        tf->x[0] = mbox_call((unsigned char)tf->x[0], (unsigned int*)tf->x[1]);
         break;
     case 7:
         thread_kill(tf->x[0]);

@@ -41,11 +41,10 @@ MBOX_REQUEST mbox_requests[] = {
 // can be passed via the mailbox
 volatile unsigned int __attribute__((aligned(16))) mbox[8];
 
-int mbox_call()
+int mbox_call(unsigned char ch, volatile unsigned int* mbox_buf)
 {
     // 28-bit address (MSB) and 4-bit value (LSB)
-    unsigned int r
-        = ((unsigned int)((long)&mbox) & ~0xF) | (MBOX_CHANNEL & 0xF);
+    unsigned int r = ((unsigned int)((long)mbox_buf) & ~0xF) | (ch & 0xF);
 
     // Wait until we can write
     while (mmio_read(MBOX_STATUS) & MBOX_FULL)
@@ -61,7 +60,7 @@ int mbox_call()
 
         // Is it a reply to our message?
         if (r == mmio_read(MBOX_READ))
-            return mbox[1] == MBOX_REQUEST_SUCCESSFUL; // Is it successful?
+            return mbox_buf[1] == MBOX_REQUEST_SUCCESSFUL; // Is it successful?
     }
     return 0;
 }
@@ -83,5 +82,5 @@ int mbox_get_info(MBOX_REQUEST_TAG tag)
     // tags end
     mbox[6] = MBOX_END_TAG;
 
-    return mbox_call();
+    return mbox_call(MBOX_CHANNEL, (volatile unsigned int*)mbox);
 }

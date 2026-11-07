@@ -13,4 +13,5 @@ typedef enum {
     MBOX_TAG_ARM_MEMORY = 0x00010005,
 } MBOX_REQUEST_TAG;
 
+int mbox_call(unsigned char ch, volatile unsigned int* mbox_buf);
 int mbox_get_info(MBOX_REQUEST_TAG tag);
