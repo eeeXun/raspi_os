@@ -1,4 +1,7 @@
 #include "syscall.h"
+#include "cpio.h"
+#include "memory.h"
+#include "program.h"
 #include "thread.h"
 #include "uart.h"
 
@@ -22,6 +25,24 @@ int syscall_uart_write(char* buf, int size)
     return size;
 }
 
+int syscall_exec(trap_frame* tf, char* name)
+{
+    long long filesize;
+    char* data;
+    if (!cpio_find(&filesize, name, &data))
+        return -1;
+    thread_t* thread = get_current_thread();
+    if (thread->user_program)
+        kfree(thread->user_program);
+    thread->user_program = kmalloc(filesize);
+    for (long long i = 0; i < filesize; i++)
+        ((char*)thread->user_program)[i] = data[i];
+
+    tf->elr_el1 = (unsigned long long)thread->user_program;
+    tf->sp_el0 = (unsigned long long)thread->user_stack + USER_STACK_SIZE;
+    return 0;
+}
+
 void system_call(trap_frame* tf)
 {
     switch (tf->x[8]) {
@@ -35,6 +56,7 @@ void system_call(trap_frame* tf)
         tf->x[0] = syscall_uart_write((char*)tf->x[0], tf->x[1]);
         break;
     case 3:
+        tf->x[0] = syscall_exec(tf, (char*)tf->x[0]);
         break;
     case 4:
         break;

@@ -1,9 +1,8 @@
+#include "program.h"
 #include "cpio.h"
 #include "memory.h"
 #include "thread.h"
 #include "uart.h"
-
-#define USER_STACK_SIZE 0x1000
 
 // Implement in switch.s
 extern void enter_el0(unsigned long long entry, unsigned long long user_sp);
