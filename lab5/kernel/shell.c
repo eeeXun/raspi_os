@@ -123,8 +123,8 @@ void cmd_run(int argc, char* argv[])
         uart_puts("Wrong command argument: run [elf file]\n");
         return;
     }
-    int tid = thread_create(user_entry, argv[1]);
-    thread_wait(tid);
+    thread_t* thread = thread_create(user_entry, argv[1]);
+    thread_wait(thread->tid);
 }
 
 void cmd_uptime_on(int argc, char* argv[]) { enable_uptime(); }

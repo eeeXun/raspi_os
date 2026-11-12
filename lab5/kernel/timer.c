@@ -27,7 +27,12 @@ timer_task* head = 0;
 
 int uptime_enabled = 0;
 
-void timer_init() { gic_enable(INTID_TIMER); }
+void timer_init()
+{
+    // Allow EL0 to read cntpct_el0 and cntfrq_el0
+    write_reg(cntkctl_el1, read_reg(cntkctl_el1) | 0b1);
+    gic_enable(INTID_TIMER);
+}
 
 // Set timer to the head's expire
 void reset_timer()

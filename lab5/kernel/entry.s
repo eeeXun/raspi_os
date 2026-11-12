@@ -115,4 +115,10 @@ irq_entry:
 	load_all
 	eret
 
-	// vim:ft=asm
+	.global ret_from_fork
+
+ret_from_fork:
+	load_all
+	eret
+
+	// vim:ft=as

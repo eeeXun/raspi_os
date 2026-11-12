@@ -18,10 +18,8 @@ void user_entry(void* name)
         return;
     }
     thread_t* thread = get_current_thread();
-    thread->user_program = kmalloc(filesize);
+    thread->user_program = user_program_load(data, filesize);
     thread->user_stack = kmalloc(USER_STACK_SIZE);
-    for (long long i = 0; i < filesize; i++)
-        ((char*)thread->user_program)[i] = data[i];
-    enter_el0((unsigned long long)thread->user_program,
+    enter_el0((unsigned long long)thread->user_program->data,
         (unsigned long long)thread->user_stack + USER_STACK_SIZE);
 }

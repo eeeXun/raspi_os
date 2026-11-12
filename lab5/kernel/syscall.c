@@ -1,7 +1,6 @@
 #include "syscall.h"
 #include "cpio.h"
 #include "mbox.h"
-#include "memory.h"
 #include "program.h"
 #include "thread.h"
 #include "uart.h"
@@ -33,13 +32,10 @@ int syscall_exec(trap_frame* tf, char* name)
     if (!cpio_find(&filesize, name, &data))
         return -1;
     thread_t* thread = get_current_thread();
-    if (thread->user_program)
-        kfree(thread->user_program);
-    thread->user_program = kmalloc(filesize);
-    for (long long i = 0; i < filesize; i++)
-        ((char*)thread->user_program)[i] = data[i];
+    user_program_put(thread->user_program);
+    thread->user_program = user_program_load(data, filesize);
 
-    tf->elr_el1 = (unsigned long long)thread->user_program;
+    tf->elr_el1 = (unsigned long long)thread->user_program->data;
     tf->sp_el0 = (unsigned long long)thread->user_stack + USER_STACK_SIZE;
     return 0;
 }
@@ -60,6 +56,7 @@ void system_call(trap_frame* tf)
         tf->x[0] = syscall_exec(tf, (char*)tf->x[0]);
         break;
     case 4:
+        tf->x[0] = thread_fork(tf);
         break;
     case 5:
         thread_exit();

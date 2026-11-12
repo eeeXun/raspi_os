@@ -24,7 +24,7 @@ kernel8.img: kernel8.elf
 
 run: kernel8.img
 	qemu-system-aarch64 -M raspi4b -kernel kernel8.img -initrd ../initramfs.cpio \
-		-dtb ../../firmware/bcm2711-rpi-4-b.dtb -serial null -serial stdio -display none
+		-dtb ../../firmware/bcm2711-rpi-4-b.dtb -serial null -serial stdio -display gtk
 
 clean:
 	rm *.o *.elf *.img
