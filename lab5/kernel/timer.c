@@ -1,34 +1,31 @@
 #include "exception.h"
 #include "gic.h"
+#include "list.h"
+#include "memory.h"
 #include "register.h"
 #include "string.h"
 #include "task.h"
 #include "uart.h"
 
-#define QUEUE_SIZE 50
-#define TIMEOUT_MSG_LEN 50
+typedef struct {
+    char* message;
+    unsigned long long created_time;
+    list_head node;
+} timeout_data_t;
 
 typedef struct {
-    int used;
-    char message[TIMEOUT_MSG_LEN + 1];
-    unsigned long long created_time;
-} timeout_data;
-timeout_data timeout_data_pool[QUEUE_SIZE];
-
-typedef struct timer_task {
-    int used;
     void* callback_data;
     void (*callback)(void*);
     unsigned long long expire;
-    struct timer_task* next;
-} timer_task;
-timer_task task_queue[QUEUE_SIZE];
-timer_task* head = 0;
+    list_head node;
+} timer_task_t;
 
 int uptime_enabled = 0;
+list_head timer_task_head;
 
 void timer_init()
 {
+    INIT_LIST_HEAD(&timer_task_head);
     // Allow EL0 to read cntpct_el0 and cntfrq_el0
     write_reg(cntkctl_el1, read_reg(cntkctl_el1) | 0b1);
     gic_enable(INTID_TIMER);
@@ -37,12 +34,13 @@ void timer_init()
 // Set timer to the head's expire
 void reset_timer()
 {
-    if (!head) {
+    if (list_empty(&timer_task_head)) {
         // [0] = 0, disable timer
         write_reg(cntp_ctl_el0, 0);
         return;
     }
-    write_reg(cntp_cval_el0, head->expire);
+    write_reg(cntp_cval_el0,
+        list_first_entry(&timer_task_head, timer_task_t, node)->expire);
     // [1] = 0, Not masked timer interrupt by IMASK bit
     // [0] = 1, enable timer
     write_reg(cntp_ctl_el0, 1);
@@ -57,21 +55,21 @@ void timer_irq_top_half() { return; }
 
 void timer_irq_bottom_half()
 {
-    timer_task* task;
-    while (head) {
-        unsigned long long current_time = read_reg(cntpct_el0);
-        if (head->expire > current_time)
+    timer_task_t *entry, *safe;
+    unsigned long long current_time = read_reg(cntpct_el0);
+    list_for_each_entry_safe(entry, safe, &timer_task_head, node)
+    {
+        if (entry->expire > current_time)
             break;
-        head->callback(head->callback_data);
-        task = head;
-        head = head->next;
-        task->used = 0;
+        entry->callback(entry->callback_data);
+        list_del(&entry->node);
+        kfree(entry);
     }
     reset_timer();
     gic_enable(INTID_TIMER);
 }
 
-timer_task* add_timer(void* callback, void* data, int after)
+timer_task_t* add_timer(void* callback, void* data, int after)
 {
     if (after <= 0) {
         uart_puts("add_timer must set after greater than 0\n");
@@ -80,28 +78,18 @@ timer_task* add_timer(void* callback, void* data, int after)
 
     unsigned long long daif_state = irq_save();
 
-    timer_task* task = 0;
-    for (int i = 0; i < QUEUE_SIZE; i++) {
-        if (task_queue[i].used)
-            continue;
-        task = &task_queue[i];
-        break;
-    }
-    if (!task) {
-        irq_restore(daif_state);
-        uart_puts("No avaiable timer task to allocate\n");
-        return 0;
-    }
-    task->used = 1;
+    timer_task_t* task = kmalloc(sizeof(timer_task_t));
     task->callback = callback;
     task->callback_data = data;
     task->expire = read_reg(cntpct_el0) + read_reg(cntfrq_el0) * after;
-    timer_task** current = &head;
-    while (*current && task->expire >= (*current)->expire)
-        current = &(*current)->next;
-    task->next = *current;
-    *current = task;
-    if (task == head)
+    timer_task_t* entry;
+    list_for_each_entry(entry, &timer_task_head, node)
+    {
+        if (task->expire < entry->expire)
+            break;
+    }
+    list_add_tail(&task->node, &entry->node);
+    if (list_first_entry(&timer_task_head, timer_task_t, node) == task)
         reset_timer();
 
     irq_restore(daif_state);
@@ -110,7 +98,7 @@ timer_task* add_timer(void* callback, void* data, int after)
 
 void timeout_callback(void* data)
 {
-    timeout_data* _data = (timeout_data*)data;
+    timeout_data_t* _data = (timeout_data_t*)data;
     uart_puts("\n[setTimeout] ");
     uart_puts(_data->message);
     uart_puts(", current time: ");
@@ -118,31 +106,18 @@ void timeout_callback(void* data)
     uart_puts("s, created time: ");
     uart_put_dec(_data->created_time);
     uart_puts("s\n");
-    _data->used = 0;
+    kfree(_data->message);
+    kfree(_data);
 }
 
 void add_timeout_task(char* msg, int after)
 {
-    timeout_data* data = 0;
-    timer_task* task = 0;
-    for (int i = 0; i < QUEUE_SIZE; i++) {
-        if (timeout_data_pool[i].used)
-            continue;
-        data = &timeout_data_pool[i];
-        break;
-    }
-    if (!data) {
-        uart_puts("No avaiable timeout data pool\n");
-        return;
-    }
-    data->used = 1;
-    strncpy(data->message, msg, TIMEOUT_MSG_LEN + 1);
+    timeout_data_t* data = kmalloc(sizeof(timeout_data_t));
+    int msg_len = strlen(msg);
+    data->message = kmalloc(msg_len + 1);
+    strncpy(data->message, msg, msg_len + 1);
     data->created_time = get_uptime();
-    task = add_timer(timeout_callback, (void*)data, after);
-    if (!task) {
-        uart_puts("No avaiable timer task queue!\n");
-        data->used = 0;
-    }
+    add_timer(timeout_callback, (void*)data, after);
 }
 
 void uptime_callback(void* data)
@@ -171,12 +146,7 @@ void enable_uptime()
 {
     if (uptime_enabled)
         return;
-    timer_task* task = 0;
-    task = add_timer(uptime_callback, 0, 2);
-    if (!task) {
-        uart_puts("No avaiable timer task queue! Try again later!\n");
-        return;
-    }
+    add_timer(uptime_callback, 0, 2);
     uptime_enabled = 1;
 }
 
