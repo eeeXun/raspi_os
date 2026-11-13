@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "cpio.h"
 #include "dtb.h"
+#include "exception.h"
 #include "list.h"
 #include "uart.h"
 
@@ -379,12 +380,21 @@ void* kmalloc(int size)
         uart_puts("kmalloc size too large!\n");
         return 0;
     }
+
+    unsigned long long daif = irq_save();
+    void* ptr;
+
     if (size <= chunk_sizes[CHUNK_SIZE_NUM - 1])
-        return alloc_chunk(size);
-    int order = 0;
-    while ((FRAME_SIZE << order) < size)
-        order++;
-    return alloc_page(order);
+        ptr = alloc_chunk(size);
+    else {
+        int order = 0;
+        while ((FRAME_SIZE << order) < size)
+            order++;
+        ptr = alloc_page(order);
+    }
+
+    irq_restore(daif);
+    return ptr;
 }
 
 void kfree(void* ptr)
@@ -395,6 +405,8 @@ void kfree(void* ptr)
         uart_puts("Invalid address!\n");
         return;
     }
+
+    unsigned long long daif = irq_save();
     switch (frames[idx].status) {
     case FRAME_ALLOCATED:
         free_page(address);
@@ -408,4 +420,5 @@ void kfree(void* ptr)
         uart_puts("!\n");
         break;
     }
+    irq_restore(daif);
 }
