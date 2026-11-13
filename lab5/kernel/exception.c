@@ -2,6 +2,7 @@
 #include "register.h"
 #include "syscall.h"
 #include "task.h"
+#include "thread.h"
 #include "timer.h"
 #include "uart.h"
 
@@ -23,33 +24,24 @@ void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void exception_handler(trap_frame* tf)
 {
-    // EC = SVC from AArch64
-    if (((read_reg(esr_el1) >> 26) & 0b111111) == 0b010101) {
+    switch ((read_reg(esr_el1) >> 26) & 0b111111) {
+    case 0b010101: // EC = SVC from AArch64
         enable_interrupt();
         system_call(tf);
-        return;
+        break;
+    default:
+        uart_puts("Unhandled exception, esr_el1: 0x");
+        uart_put_hex(read_reg(esr_el1));
+        uart_puts(", elr_el1: 0x");
+        uart_put_hex(read_reg(elr_el1));
+        uart_put('\n');
+        if ((tf->spsr_el1 & 0xf) == 0) // from EL0
+            thread_exit();
+        else // from EL1, kernel bug
+            while (1)
+                asm volatile("wfi");
+        break;
     }
-    uart_puts("### exception handler start ###\n");
-
-    // Saved Program Status Register
-    // Holds the saved process state
-    uart_puts("spsr_el1: 0x");
-    uart_put_hex(read_reg(spsr_el1));
-    uart_put('\n');
-
-    // Exception Link Register
-    // Holds the address to return to
-    uart_puts("elr_el1: 0x");
-    uart_put_hex(read_reg(elr_el1));
-    uart_put('\n');
-
-    // Exception Syndrome Register
-    // Holds syndrome information
-    uart_puts("esr_el1: 0x");
-    uart_put_hex(read_reg(esr_el1));
-    uart_put('\n');
-
-    uart_puts("### exception handler end ###\n");
 }
 
 void irq_handler()
