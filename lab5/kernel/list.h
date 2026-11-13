@@ -5,6 +5,8 @@ typedef struct list_head {
     struct list_head* next;
 } list_head;
 
+#define LIST_HEAD(head) list_head head = { &(head), &(head) }
+
 #define container_of(ptr, type, member)                                        \
     ((type*)((char*)(ptr) - __builtin_offsetof(type, member)))
 

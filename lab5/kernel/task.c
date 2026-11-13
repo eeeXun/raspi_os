@@ -1,18 +1,17 @@
 #include "task.h"
 #include "exception.h"
+#include "list.h"
+#include "memory.h"
 #include "uart.h"
 
-#define QUEUE_SIZE 20
-typedef struct task {
-    int used;
+typedef struct {
     int priority;
     void (*callback)();
-    struct task* next;
-} task;
-task task_pool[QUEUE_SIZE];
-task* task_head = 0;
+    list_head node;
+} task_t;
 
 int trace_task = 0;
+LIST_HEAD(task_head);
 volatile int current_priority = PRIO_NONE;
 
 void set_task_trace(int status) { trace_task = status; }
@@ -22,44 +21,34 @@ void set_task_trace(int status) { trace_task = status; }
 // half.
 void task_add(void (*callback)(), int priority)
 {
-    task* new_task = 0;
-    for (int i = 0; i < QUEUE_SIZE; i++) {
-        if (task_pool[i].used)
-            continue;
-        new_task = &task_pool[i];
-        break;
-    }
-    if (!new_task) {
-        uart_puts("\nInterrupt task queue is full!\n");
-        return;
-    }
-
-    new_task->used = 1;
+    task_t* new_task = kmalloc(sizeof(task_t));
     new_task->callback = callback;
     new_task->priority = priority;
-
-    task** current = &task_head;
-    while (*current && priority >= (*current)->priority)
-        current = &(*current)->next;
-    new_task->next = *current;
-    *current = new_task;
+    task_t* entry;
+    list_for_each_entry(entry, &task_head, node)
+    {
+        if (new_task->priority < entry->priority)
+            break;
+    }
+    list_add_tail(&new_task->node, &entry->node);
 }
 
 void task_run()
 {
-    while (1) {
-        task* t = task_head;
-        if (!t || t->priority >= current_priority)
+    while (!list_empty(&task_head)) {
+        task_t* task = list_first_entry(&task_head, task_t, node);
+        if (task->priority >= current_priority)
             return;
-        task_head = t->next;
-        void (*callback)() = t->callback;
-        t->used = 0;
+        list_del(&task->node);
+        void (*callback)() = task->callback;
+        int priority = task->priority;
+        kfree(task);
 
         int previous_priority = current_priority;
-        current_priority = t->priority;
+        current_priority = priority;
         if (trace_task && previous_priority != PRIO_NONE) {
             uart_puts_poll("[task] enter prio ");
-            uart_put_dec_poll(t->priority);
+            uart_put_dec_poll(priority);
             uart_puts_poll(", preempting ");
             uart_put_dec_poll(previous_priority);
             uart_put_poll('\n');
