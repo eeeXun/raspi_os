@@ -145,7 +145,7 @@ void cmd_demo_preempt(int argc, char* argv[])
     uart_puts("In 1s a timer task runs for 5s.\n"
               "Type while it runs to see the uart task preempt it.\n");
     set_task_trace(1);
-    add_timer(slow_timer_callback, 0, 1);
+    add_timer(slow_timer_callback, 0, sec2tick(1));
 }
 
 void cmd_buddy_info(int argc, char* argv[]) { buddy_info(); }

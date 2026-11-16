@@ -1,3 +1,4 @@
+#include "timer.h"
 #include "exception.h"
 #include "gic.h"
 #include "list.h"
@@ -69,19 +70,14 @@ void timer_irq_bottom_half()
     gic_enable(INTID_TIMER);
 }
 
-void add_timer(void* callback, void* data, int after)
+void add_timer(void* callback, void* data, unsigned long long ticks)
 {
-    if (after <= 0) {
-        uart_puts("add_timer must set after greater than 0\n");
-        return;
-    }
-
     unsigned long long daif_state = irq_save();
 
     timer_task_t* task = kmalloc(sizeof(timer_task_t));
     task->callback = callback;
     task->callback_data = data;
-    task->expire = read_reg(cntpct_el0) + read_reg(cntfrq_el0) * after;
+    task->expire = read_reg(cntpct_el0) + ticks;
     timer_task_t* entry;
     list_for_each_entry(entry, &timer_task_head, node)
     {
@@ -116,7 +112,7 @@ void add_timeout_task(char* msg, int after)
     data->message = kmalloc(msg_len + 1);
     strncpy(data->message, msg, msg_len + 1);
     data->created_time = get_uptime();
-    add_timer(timeout_callback, (void*)data, after);
+    add_timer(timeout_callback, (void*)data, sec2tick(after));
 }
 
 void uptime_callback(void* data)
@@ -126,7 +122,7 @@ void uptime_callback(void* data)
     uart_puts("\n[timer] uptime ");
     uart_put_dec(get_uptime());
     uart_puts("s\n");
-    add_timer(uptime_callback, 0, 2);
+    add_timer(uptime_callback, 0, sec2tick(2));
 }
 
 void slow_timer_callback(void* data)
@@ -145,7 +141,7 @@ void enable_uptime()
 {
     if (uptime_enabled)
         return;
-    add_timer(uptime_callback, 0, 2);
+    add_timer(uptime_callback, 0, sec2tick(2));
     uptime_enabled = 1;
 }
 
