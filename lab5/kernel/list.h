@@ -36,11 +36,61 @@ typedef struct list_head {
         &entry->member != (head); entry = safe,                                \
         safe = list_entry(safe->member.next, typeof(*entry), member))
 
-void INIT_LIST_HEAD(list_head* head);
-int list_empty(list_head* head);
-int list_size(list_head* head);
-void list_add(list_head* node, list_head* head);
-void list_add_tail(list_head* node, list_head* head);
-void list_del(list_head* node);
-void list_move(list_head* node, list_head* head);
-void list_move_tail(list_head* node, list_head* head);
+static inline void INIT_LIST_HEAD(list_head* head)
+{
+    head->next = head;
+    head->prev = head;
+}
+
+static inline int list_empty(list_head* head) { return head->next == head; }
+
+static inline int list_size(list_head* head)
+{
+    if (!head)
+        return 0;
+    int ret = 0;
+    list_head* node;
+    list_for_each(node, head) ret++;
+    return ret;
+}
+
+static inline void list_add(list_head* node, list_head* head)
+{
+    list_head* next = head->next;
+
+    head->next = node;
+    node->prev = head;
+    node->next = next;
+    next->prev = node;
+}
+
+static inline void list_add_tail(list_head* node, list_head* head)
+{
+
+    list_head* prev = head->prev;
+
+    head->prev = node;
+    node->next = head;
+    node->prev = prev;
+    prev->next = node;
+}
+
+static inline void list_del(list_head* node)
+{
+    list_head* prev = node->prev;
+    list_head* next = node->next;
+    prev->next = next;
+    next->prev = prev;
+}
+
+static inline void list_move(list_head* node, list_head* head)
+{
+    list_del(node);
+    list_add(node, head);
+}
+
+static inline void list_move_tail(list_head* node, list_head* head)
+{
+    list_del(node);
+    list_add_tail(node, head);
+}

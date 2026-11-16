@@ -8,7 +8,8 @@ SFILES = $(wildcard *.s)
 CFILES = $(wildcard *.c)
 OFILES = $(SFILES:.s=.o) $(CFILES:.c=.o)
 
-CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -nostdinc -nostdlib -nostartfiles -mstrict-align
+CFLAGS = -O2 -Wall -nostdlib -nostartfiles -ffreestanding \
+		 -nostdinc -nostdlib -nostartfiles -mstrict-align -mgeneral-regs-only
 
 %.o: %.s
 	${CC} $(CFLAGS) -c $< -o $@

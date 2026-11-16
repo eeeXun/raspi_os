@@ -1,4 +1,5 @@
 #include "cpio.h"
+#include "exception.h"
 #include "gic.h"
 #include "memory.h"
 #include "shell.h"
@@ -17,7 +18,7 @@ int main(void* dtb_base)
     buddy_init();
     thread_init();
 
-    asm volatile("msr DAIFClr, 0xF"); // Unmask all DAIF
+    enable_interrupt();
 
     int cmd_len;
     char buf[CLI_MAX_LEN + 1] = {};

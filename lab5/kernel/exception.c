@@ -1,3 +1,4 @@
+#include "exception.h"
 #include "gic.h"
 #include "register.h"
 #include "syscall.h"
@@ -9,7 +10,7 @@
 unsigned long long irq_save()
 {
     unsigned long long daif = read_reg(daif);
-    asm volatile("msr DAIFSet, 0xf"); // disable interrupt
+    disable_interrupt();
     return daif;
 }
 
@@ -17,10 +18,6 @@ void irq_restore(unsigned long long daif_state)
 {
     write_reg(daif, daif_state); // restore daif to previous state
 }
-
-void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
-
-void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void exception_handler(trap_frame* tf)
 {
@@ -35,7 +32,7 @@ void exception_handler(trap_frame* tf)
         uart_puts(", elr_el1: 0x");
         uart_put_hex(read_reg(elr_el1));
         uart_put('\n');
-        if ((tf->spsr_el1 & 0xf) == 0) // from EL0
+        if ((tf->spsr_el1 & 0xF) == 0) // from EL0
             thread_exit();
         else // from EL1, kernel bug
             while (1)
