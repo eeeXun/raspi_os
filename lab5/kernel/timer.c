@@ -69,11 +69,11 @@ void timer_irq_bottom_half()
     gic_enable(INTID_TIMER);
 }
 
-timer_task_t* add_timer(void* callback, void* data, int after)
+void add_timer(void* callback, void* data, int after)
 {
     if (after <= 0) {
         uart_puts("add_timer must set after greater than 0\n");
-        return 0;
+        return;
     }
 
     unsigned long long daif_state = irq_save();
@@ -93,7 +93,6 @@ timer_task_t* add_timer(void* callback, void* data, int after)
         reset_timer();
 
     irq_restore(daif_state);
-    return task;
 }
 
 void timeout_callback(void* data)
