@@ -22,11 +22,10 @@ typedef struct {
 } timer_task_t;
 
 int uptime_enabled = 0;
-list_head timer_task_head;
+LIST_HEAD(timer_task_head);
 
 void timer_init()
 {
-    INIT_LIST_HEAD(&timer_task_head);
     // Allow EL0 to read cntpct_el0 and cntfrq_el0
     write_reg(cntkctl_el1, read_reg(cntkctl_el1) | 0b1);
     gic_enable(INTID_TIMER);

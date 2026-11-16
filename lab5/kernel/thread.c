@@ -9,8 +9,8 @@
 #define THREAD_STACK_SIZE 0x1000
 
 int next_tid = 0;
-list_head run_queue;
-list_head zombie_queue;
+LIST_HEAD(run_queue);
+LIST_HEAD(zombie_queue);
 
 extern void ret_from_fork();
 
@@ -165,8 +165,6 @@ int thread_fork(trap_frame* tf)
 
 void thread_init()
 {
-    INIT_LIST_HEAD(&run_queue);
-    INIT_LIST_HEAD(&zombie_queue);
     thread_t* thread = kmalloc(sizeof(thread_t));
     thread->kernel_stack = 0;
     thread->status = RUNNING;
