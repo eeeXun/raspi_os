@@ -1,6 +1,7 @@
 #include "exception.h"
 #include "gic.h"
 #include "register.h"
+#include "sched.h"
 #include "syscall.h"
 #include "task.h"
 #include "thread.h"
@@ -59,4 +60,8 @@ void irq_handler()
     }
     gic_eoi(id);
     task_run();
+    if (need_reschedule && current_priority == PRIO_NONE) {
+        need_reschedule = 0;
+        schedule();
+    }
 }

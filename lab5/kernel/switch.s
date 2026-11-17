@@ -3,6 +3,10 @@
 .global enter_el0
 
 enter_el0:
+	// Mask interrupts until eret
+	// An IRQ would overwrite elr_el1 with the next kernel instruction and spsr_el1 with EL1h PSTATE
+	msr DAIFSet, 0xF
+
 	msr elr_el1, x0 // Exception Link Register, user program address
 	msr sp_el0, x1  // user stack pointer in EL0
 

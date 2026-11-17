@@ -105,7 +105,7 @@ void uart_irq_bottom_half() { gic_enable(INTID_AUX); }
 char uart_getc()
 {
     while (rx_tail == rx_head)
-        schedule();
+        asm volatile("wfi");
     char c = rx_buf[rx_tail];
     switch (c) {
     case '\r':

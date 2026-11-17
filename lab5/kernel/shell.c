@@ -184,7 +184,6 @@ void foo(void* arg)
         uart_put_dec(i);
         uart_put('\n');
         delay(1000000);
-        schedule();
     }
 }
 

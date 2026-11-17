@@ -1,10 +1,13 @@
 #include "thread.h"
+#include "exception.h"
 #include "list.h"
 #include "memory.h"
 #include "program.h"
 #include "register.h"
+#include "sched.h"
 #include "string.h"
 #include "syscall.h"
+#include "timer.h"
 
 #define THREAD_STACK_SIZE 0x1000
 
@@ -34,35 +37,27 @@ void user_program_put(user_program_t* user_program)
     kfree(user_program);
 }
 
-void schedule()
-{
-    thread_t* current = get_current_thread();
-    if (current->status != DEAD)
-        list_move_tail(&current->list_node, &run_queue);
-    thread_t* next = list_first_entry(&run_queue, thread_t, list_node);
-    if (current != next)
-        switch_to(current, next);
-}
-
 void idle_thread(void* arg)
 {
-    thread_t *thread, *safe;
     while (1) {
-        list_for_each_entry_safe(thread, safe, &zombie_queue, list_node)
-        {
-            list_del(&thread->list_node);
-            user_program_put(thread->user_program);
-            if (thread->user_stack)
-                kfree(thread->user_stack);
-            kfree(thread->kernel_stack);
-            kfree(thread);
+        unsigned long long daif_state = irq_save();
+        while (!list_empty(&zombie_queue)) {
+            thread_t* zombie_thread
+                = list_first_entry(&zombie_queue, thread_t, list_node);
+            list_del(&zombie_thread->list_node);
+            user_program_put(zombie_thread->user_program);
+            if (zombie_thread->user_stack)
+                kfree(zombie_thread->user_stack);
+            kfree(zombie_thread->kernel_stack);
+            kfree(zombie_thread);
         }
-        schedule();
+        irq_restore(daif_state);
     }
 }
 
 void thread_exit()
 {
+    disable_interrupt();
     thread_t* thread = get_current_thread();
     thread->status = DEAD;
     list_del(&thread->list_node);
@@ -76,6 +71,7 @@ void thread_kill(int tid)
         thread_exit();
         return;
     }
+    unsigned long long daif_state = irq_save();
     thread_t* thread;
     list_for_each_entry(thread, &run_queue, list_node)
     {
@@ -84,12 +80,14 @@ void thread_kill(int tid)
         thread->status = DEAD;
         list_del(&thread->list_node);
         list_add_tail(&thread->list_node, &zombie_queue);
-        return;
+        break;
     }
+    irq_restore(daif_state);
 }
 
 void thread_entry()
 {
+    enable_interrupt();
     thread_t* thread = get_current_thread();
     thread->func(thread->arg);
     thread_exit();
@@ -97,12 +95,16 @@ void thread_entry()
 
 int thread_alive(int tid)
 {
+    unsigned long long daif_state = irq_save();
     thread_t* thread;
     list_for_each_entry(thread, &run_queue, list_node)
     {
-        if (thread->tid == tid)
+        if (thread->tid == tid) {
+            irq_restore(daif_state);
             return 1;
+        }
     }
+    irq_restore(daif_state);
     return 0;
 }
 
@@ -133,7 +135,10 @@ thread_t* thread_create(void (*func)(void*), void* arg)
     thread->func = func;
     thread->arg = arg;
     thread->context.lr = (unsigned long long)thread_entry;
+
+    unsigned long long daif_state = irq_save();
     list_add_tail(&thread->list_node, &run_queue);
+    irq_restore(daif_state);
     return thread;
 }
 
@@ -159,7 +164,10 @@ int thread_fork(trap_frame* tf)
     child_tf->x[29] += user_stack_offset;
     child->context.lr = (unsigned long long)ret_from_fork;
     child->context.sp = (unsigned long long)child_tf;
+
+    unsigned long long daif_state = irq_save();
     list_add_tail(&child->list_node, &run_queue);
+    irq_restore(daif_state);
     return child->tid;
 }
 
@@ -176,4 +184,6 @@ void thread_init()
     list_add_tail(&thread->list_node, &run_queue);
     // Create idle thread
     thread_create(idle_thread, 0);
+    // Create timer interrupt for scheduling
+    add_timer(sched_tick, 0, read_reg(cntfrq_el0) >> 5);
 }

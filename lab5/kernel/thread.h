@@ -32,12 +32,13 @@ typedef struct thread_t {
     list_head list_node;
 } thread_t;
 
-extern void switch_to(thread_t* current, thread_t* next);
 extern thread_t* get_current_thread();
+
+extern list_head run_queue;
+extern list_head zombie_queue;
 
 user_program_t* user_program_load(void* data, int size);
 void user_program_put(user_program_t* user_program);
-void schedule();
 void thread_exit();
 void thread_kill(int tid);
 int thread_alive(int tid);
