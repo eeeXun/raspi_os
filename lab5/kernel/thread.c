@@ -126,6 +126,7 @@ thread_t* thread_alloc()
         = (unsigned long long)thread->kernel_stack + THREAD_STACK_SIZE;
     thread->user_program = 0;
     thread->user_stack = 0;
+    memset(thread->signal_handlers, 0, sizeof(thread->signal_handlers));
     return thread;
 }
 
@@ -164,6 +165,8 @@ int thread_fork(trap_frame* tf)
     child_tf->x[29] += user_stack_offset;
     child->context.lr = (unsigned long long)ret_from_fork;
     child->context.sp = (unsigned long long)child_tf;
+    memcpy(child->signal_handlers, parent->signal_handlers,
+        sizeof(parent->signal_handlers));
 
     unsigned long long daif_state = irq_save();
     list_add_tail(&child->list_node, &run_queue);
@@ -180,6 +183,7 @@ void thread_init()
     thread->func = 0;
     thread->user_program = 0;
     thread->user_stack = 0;
+    memset(thread->signal_handlers, 0, sizeof(thread->signal_handlers));
     write_reg(tpidr_el1, thread);
     list_add_tail(&thread->list_node, &run_queue);
     // Create idle thread

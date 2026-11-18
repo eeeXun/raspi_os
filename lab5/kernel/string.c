@@ -121,3 +121,10 @@ void* memcpy(void* dst, void* src, int n)
         ((char*)dst)[i] = ((char*)src)[i];
     return dst;
 }
+
+void* memset(void* dst, unsigned char value, int n)
+{
+    for (int i = 0; i < n; i++)
+        ((char*)dst)[i] = value;
+    return dst;
+}

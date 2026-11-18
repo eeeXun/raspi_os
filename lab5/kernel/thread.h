@@ -1,6 +1,7 @@
 #pragma once
 
 #include "list.h"
+#include "signal.h"
 #include "syscall.h"
 
 typedef struct {
@@ -29,6 +30,7 @@ typedef struct thread_t {
     void* kernel_stack;
     user_program_t* user_program;
     void* user_stack;
+    signal_handler_t signal_handlers[SIG_NUM];
     list_head list_node;
 } thread_t;
 
