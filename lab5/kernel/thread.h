@@ -1,8 +1,8 @@
 #pragma once
 
+#include "exception.h"
 #include "list.h"
 #include "signal.h"
-#include "syscall.h"
 
 typedef struct {
     unsigned long long x19_x28[10];
@@ -30,6 +30,9 @@ typedef struct thread_t {
     void* kernel_stack;
     user_program_t* user_program;
     void* user_stack;
+    unsigned int signal_pending;
+    void* signal_stack;
+    trap_frame signal_tf; // context before running handler
     signal_handler_t signal_handlers[SIG_NUM];
     list_head list_node;
 } thread_t;
@@ -42,6 +45,7 @@ extern list_head zombie_queue;
 user_program_t* user_program_load(void* data, int size);
 void user_program_put(user_program_t* user_program);
 void thread_exit();
+thread_t* find_thread(int tid);
 void thread_kill(int tid);
 int thread_alive(int tid);
 void thread_wait(int tid);

@@ -6,7 +6,6 @@
 #include "register.h"
 #include "sched.h"
 #include "string.h"
-#include "syscall.h"
 #include "timer.h"
 
 #define THREAD_STACK_SIZE 0x1000
@@ -48,6 +47,8 @@ void idle_thread(void* arg)
             user_program_put(zombie_thread->user_program);
             if (zombie_thread->user_stack)
                 kfree(zombie_thread->user_stack);
+            if (zombie_thread->signal_stack)
+                kfree(zombie_thread->signal_stack);
             kfree(zombie_thread->kernel_stack);
             kfree(zombie_thread);
         }
@@ -65,6 +66,17 @@ void thread_exit()
     schedule();
 }
 
+thread_t* find_thread(int tid)
+{
+    thread_t* thread;
+    list_for_each_entry(thread, &run_queue, list_node)
+    {
+        if (thread->tid == tid)
+            return thread;
+    }
+    return 0;
+}
+
 void thread_kill(int tid)
 {
     if (tid == get_current_thread()->tid) {
@@ -72,15 +84,11 @@ void thread_kill(int tid)
         return;
     }
     unsigned long long daif_state = irq_save();
-    thread_t* thread;
-    list_for_each_entry(thread, &run_queue, list_node)
-    {
-        if (thread->tid != tid)
-            continue;
+    thread_t* thread = find_thread(tid);
+    if (thread) {
         thread->status = DEAD;
         list_del(&thread->list_node);
         list_add_tail(&thread->list_node, &zombie_queue);
-        break;
     }
     irq_restore(daif_state);
 }
@@ -126,6 +134,8 @@ thread_t* thread_alloc()
         = (unsigned long long)thread->kernel_stack + THREAD_STACK_SIZE;
     thread->user_program = 0;
     thread->user_stack = 0;
+    thread->signal_pending = 0;
+    thread->signal_stack = 0;
     memset(thread->signal_handlers, 0, sizeof(thread->signal_handlers));
     return thread;
 }
@@ -183,6 +193,8 @@ void thread_init()
     thread->func = 0;
     thread->user_program = 0;
     thread->user_stack = 0;
+    thread->signal_pending = 0;
+    thread->signal_stack = 0;
     memset(thread->signal_handlers, 0, sizeof(thread->signal_handlers));
     write_reg(tpidr_el1, thread);
     list_add_tail(&thread->list_node, &run_queue);

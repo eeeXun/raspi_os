@@ -2,6 +2,7 @@
 #include "gic.h"
 #include "register.h"
 #include "sched.h"
+#include "signal.h"
 #include "syscall.h"
 #include "task.h"
 #include "thread.h"
@@ -40,9 +41,12 @@ void exception_handler(trap_frame* tf)
                 asm volatile("wfi");
         break;
     }
+    // Only check signal pending and run handler when it returns to EL0
+    if ((tf->spsr_el1 & 0b1111) == 0b0000)
+        signal_handle(tf);
 }
 
-void irq_handler()
+void irq_handler(trap_frame* tf)
 {
     unsigned int id = gic_ack();
     gic_disable(id);
@@ -64,4 +68,8 @@ void irq_handler()
         need_reschedule = 0;
         schedule();
     }
+    // A preempted thread resumes here after switch_to
+    // Only check signal pending and run handler when it returns to EL0
+    if ((tf->spsr_el1 & 0b1111) == 0b0000)
+        signal_handle(tf);
 }

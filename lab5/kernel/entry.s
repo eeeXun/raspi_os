@@ -111,7 +111,8 @@ exception_entry:
 
 irq_entry:
 	save_all
-	bl irq_handler
+	mov x0, sp
+	bl  irq_handler
 	load_all
 	eret
 
@@ -121,4 +122,10 @@ ret_from_fork:
 	load_all
 	eret
 
-	// vim:ft=as
+	.global sigreturn_trampoline
+
+sigreturn_trampoline:
+	mov x8, #139 // syscall number 139, same as linux
+	svc #0
+
+	// vim:ft=asm

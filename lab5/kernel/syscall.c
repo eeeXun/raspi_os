@@ -1,6 +1,8 @@
 #include "syscall.h"
 #include "cpio.h"
+#include "exception.h"
 #include "mbox.h"
+#include "memory.h"
 #include "program.h"
 #include "signal.h"
 #include "string.h"
@@ -51,6 +53,28 @@ void syscall_signal(int sig, signal_handler_t handler)
     thread->signal_handlers[sig] = handler;
 }
 
+void syscall_kill(int tid, int sig)
+{
+    if (sig < 0 || sig >= SIG_NUM)
+        return;
+    unsigned long long daif_state = irq_save();
+    thread_t* thread = find_thread(tid);
+    if (thread)
+        thread->signal_pending |= 1 << sig;
+    irq_restore(daif_state);
+}
+
+void syscall_sigreturn(trap_frame* tf)
+{
+    thread_t* thread = get_current_thread();
+    // Not in a handler, prevent user from calling svc #139 by itself
+    if (!thread->signal_stack)
+        return;
+    memcpy(tf, &thread->signal_tf, sizeof(trap_frame));
+    kfree(thread->signal_stack);
+    thread->signal_stack = 0;
+}
+
 void system_call(trap_frame* tf)
 {
     switch (tf->x[8]) {
@@ -80,6 +104,12 @@ void system_call(trap_frame* tf)
         break;
     case 8:
         syscall_signal(tf->x[0], (signal_handler_t)tf->x[1]);
+        break;
+    case 9:
+        syscall_kill(tf->x[0], tf->x[1]);
+        break;
+    case 139:
+        syscall_sigreturn(tf);
         break;
     default:
         break;
